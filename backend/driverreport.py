@@ -69,7 +69,8 @@ class TestDriverReport(unittest.TestCase):
             return '找不到司机'
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]'))).click()
+            (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]')))
+        self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(15)>a[name="btnReport"]').click()
         self.report_action()
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
@@ -79,12 +80,13 @@ class TestDriverReport(unittest.TestCase):
         e_carnum.clear()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
-
+#        self.driver.execute_script("$('#selCar-suggest').html('')")
         e_carnum.send_keys(carnum)
-        e_carnum.click()
-        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[text="' + carnum + '"]'))).click()
+#        sleep(1)
+#        e_carnum.click()
+#        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[text="' + carnum + '"]'))).click()
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
-#        self.driver.find_element_by_css_selector('#query_carno').click()  # 车牌查询
+        self.driver.find_element_by_css_selector('#query_carno').click()  # 车牌查询
         try:
             WebDriverWait(self.driver, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr'))
@@ -129,13 +131,13 @@ class TestDriverReport(unittest.TestCase):
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr')))
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
-    @unittest.skip("直接跳过")
+#    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_phone.json')
     def test_driver_report_by_phone(self, phone):
         report_status = self.driver_report_by_phone(phone)
         self.assertEqual(report_status, '报班')
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_carnum.json')
     def test_driver_report_by_carnum(self, carnum, phone):
         report_status = self.driver_report_by_carnum(carnum, phone)
