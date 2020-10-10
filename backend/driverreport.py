@@ -15,7 +15,7 @@ class TestDriverReport(unittest.TestCase):
     is_phone = True
     @classmethod
     def setUpClass(cls):
-        cls.driver = login.login('HTTP', 'USER')
+        cls.driver = login.login('HTTP1', 'USER1')
         utils.switch_frame(cls.driver, '监控管理', '司机报班', 'driverReport.do')
 
     @classmethod
