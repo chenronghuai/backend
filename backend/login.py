@@ -20,13 +20,11 @@ def login(url_section, user_section):
     driver.maximize_window()
     driver.find_element_by_id('username').send_keys(utils.read_config_value(user_section, 'username'))
     driver.find_element_by_id('userpwd').send_keys(utils.read_config_value(user_section, 'password'))
-    '''
-    sleep(5)
-    driver.find_element_by_id('loginBtn').click()
-    '''
+
     sleep(1)
     # 以下为登录验证码自动识别
-    while 1:
+
+    while True:
         driver.find_element_by_id('imgCode').clear()
         driver.save_screenshot(os.path.join(utils.get_path(), 'login.png'))
         code_ele = driver.find_element_by_xpath('//*[@id="changeImg"]')
@@ -43,7 +41,7 @@ def login(url_section, user_section):
         value = utils.cal_val(str)
         driver.find_element_by_id('imgCode').send_keys(value)
         driver.find_element_by_id('loginBtn').click()
-        sleep(1)
+        sleep(0.5)
         try:
             text_tip = driver.find_element_by_id('error-msg').text
             if text_tip is None:
@@ -52,7 +50,7 @@ def login(url_section, user_section):
         except:
             break
 
-    sleep(2)  # 出现安全预警弹窗没有关闭的情形，怀疑js没有加载完整，暂用此方法规避看看
+    sleep(2)  # 出现安全预警弹窗没有关闭的情形，怀疑js没有加载完整，暂用此方法规避
     # 如果出现修改密码弹窗，关闭
     try:
         WebDriverWait(driver, 3).until(

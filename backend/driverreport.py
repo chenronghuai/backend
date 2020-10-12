@@ -15,7 +15,7 @@ class TestDriverReport(unittest.TestCase):
     is_phone = True
     @classmethod
     def setUpClass(cls):
-        cls.driver = login.login('HTTP1', 'USER1')
+        cls.driver = login.login('HTTP2', 'USER1')
         utils.switch_frame(cls.driver, '监控管理', '司机报班', 'driverReport.do')
 
     @classmethod
@@ -23,10 +23,15 @@ class TestDriverReport(unittest.TestCase):
         cls.driver.quit()
 
     def report_action(self):
+        WebDriverWait(self.driver, 5).until(lambda x: x.find_element_by_id('driverUid').get_attribute('value') != '')
+        self.driver.execute_script('$("#sel_origin").val("361000")')
+        self.driver.execute_script('$("#sel_destination").val("361000")')
+        sleep(2)
+        '''
         ori = WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName')))
-        '''
+        
         等DOM树加载了suggest条目，再点击起始方位
-        '''
+        
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#startName-suggest>div')))
         ori.click()
@@ -34,9 +39,7 @@ class TestDriverReport(unittest.TestCase):
         ori.send_keys('XM')
         WebDriverWait(self.driver, 5).until(EC.text_to_be_present_in_element_value((By.CSS_SELECTOR, '#sel_origin'), "361000"))
         des = self.driver.find_element_by_css_selector('#endsName')
-        '''
         等DOM树加载了suggest条目，再点击终点方位
-        '''
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
         des.click()
@@ -44,10 +47,14 @@ class TestDriverReport(unittest.TestCase):
         des.send_keys('XM')
         WebDriverWait(self.driver, 5).until(
             EC.text_to_be_present_in_element_value((By.CSS_SELECTOR, '#sel_destination'), "361000"))
+        '''
         self.driver.find_element_by_css_selector('#report').click()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')
         #        self.driver.execute_script('layer.load(3, {shade: [0.5,"#fff"]})')
 #        WebDriverWait(self.driver, 30).until(lambda s: s.execute_script("return jQuery.active == 0"))
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
+        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         if self.is_phone:
             WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#query_driver'))).click()
@@ -55,14 +62,14 @@ class TestDriverReport(unittest.TestCase):
             WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#query_carno'))).click()
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr')))
-#        sleep(5)  # 等待蒙层消失
 
     def driver_report_by_phone(self, phone):
         e_phone = self.driver.find_element_by_css_selector('#phone')
         e_phone.clear()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
         e_phone.send_keys(phone)
-        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#query_driver'))).click()
+        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))  # 等待蒙层消失
+        self.driver.find_element(By.CSS_SELECTOR, '#query_driver').click()
         try:
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody>tr')))
         except:
@@ -110,6 +117,7 @@ class TestDriverReport(unittest.TestCase):
         e_phone.clear()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
         e_phone.send_keys(phone)
+        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         self.driver.find_element_by_css_selector('#query_driver').click()
         try:
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody>tr')))
@@ -121,10 +129,11 @@ class TestDriverReport(unittest.TestCase):
         self.driver.switch_to.parent_frame()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn- > a.layui-layer-btn0'))).click()
-        sleep(2)  # 等待蒙层消失
+#        sleep(2)  # 等待蒙层消失
         self.driver.switch_to.frame(self.driver.find_element_by_css_selector('iframe[src="/driverReport.do"]'))
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')
 #        self.driver.find_element_by_css_selector('#query_driver').click()
+        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#query_driver'))).click()
         WebDriverWait(self.driver, 5).until(
