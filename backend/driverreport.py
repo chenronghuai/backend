@@ -50,8 +50,6 @@ class TestDriverReport(unittest.TestCase):
         '''
         self.driver.find_element_by_css_selector('#report').click()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')
-        #        self.driver.execute_script('layer.load(3, {shade: [0.5,"#fff"]})')
-#        WebDriverWait(self.driver, 30).until(lambda s: s.execute_script("return jQuery.active == 0"))
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
@@ -125,19 +123,21 @@ class TestDriverReport(unittest.TestCase):
             return '找不到司机'
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(15)>a:nth-child(2)').click()
-        sleep(1)
         self.driver.switch_to.parent_frame()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn- > a.layui-layer-btn0'))).click()
-#        sleep(2)  # 等待蒙层消失
         self.driver.switch_to.frame(self.driver.find_element_by_css_selector('iframe[src="/driverReport.do"]'))
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')
-#        self.driver.find_element_by_css_selector('#query_driver').click()
+
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
+        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
+
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#query_driver'))).click()
         WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr')))
+            EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr>td:nth-child(10)')))
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
 #    @unittest.skip("直接跳过")
