@@ -15,7 +15,7 @@ class TestDriverReport(unittest.TestCase):
     is_phone = True
     @classmethod
     def setUpClass(cls):
-        cls.driver = login.login('HTTP2', 'USER1')
+        cls.driver = login.login('HTTP1', 'USER2')
         utils.switch_frame(cls.driver, '监控管理', '司机报班', 'driverReport.do')
 
     @classmethod
@@ -27,27 +27,6 @@ class TestDriverReport(unittest.TestCase):
         self.driver.execute_script('$("#sel_origin").val("361000")')
         self.driver.execute_script('$("#sel_destination").val("361000")')
         sleep(2)
-        '''
-        ori = WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName')))
-        
-        等DOM树加载了suggest条目，再点击起始方位
-        
-        WebDriverWait(self.driver, 5).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#startName-suggest>div')))
-        ori.click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest')))
-        ori.send_keys('XM')
-        WebDriverWait(self.driver, 5).until(EC.text_to_be_present_in_element_value((By.CSS_SELECTOR, '#sel_origin'), "361000"))
-        des = self.driver.find_element_by_css_selector('#endsName')
-        等DOM树加载了suggest条目，再点击终点方位
-        WebDriverWait(self.driver, 5).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
-        des.click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#endsName-suggest')))
-        des.send_keys('XM')
-        WebDriverWait(self.driver, 5).until(
-            EC.text_to_be_present_in_element_value((By.CSS_SELECTOR, '#sel_destination'), "361000"))
-        '''
         self.driver.find_element_by_css_selector('#report').click()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')
         WebDriverWait(self.driver, 5).until(
@@ -60,6 +39,8 @@ class TestDriverReport(unittest.TestCase):
             WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#query_carno'))).click()
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr')))
+        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
 
     def driver_report_by_phone(self, phone):
         e_phone = self.driver.find_element_by_css_selector('#phone')
@@ -85,11 +66,7 @@ class TestDriverReport(unittest.TestCase):
         e_carnum.clear()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
-#        self.driver.execute_script("$('#selCar-suggest').html('')")
-        e_carnum.send_keys(carnum)
-#        sleep(1)
-#        e_carnum.click()
-#        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[text="' + carnum + '"]'))).click()
+        self.driver.execute_script('$("#selCar").val("' + carnum + '")')
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         self.driver.find_element_by_css_selector('#query_carno').click()  # 车牌查询
         try:
@@ -140,13 +117,13 @@ class TestDriverReport(unittest.TestCase):
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr>td:nth-child(10)')))
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_phone.json')
     def test_driver_report_by_phone(self, phone):
         report_status = self.driver_report_by_phone(phone)
         self.assertEqual(report_status, '报班')
 
-    @unittest.skip("直接跳过")
+#    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_carnum.json')
     def test_driver_report_by_carnum(self, carnum, phone):
         report_status = self.driver_report_by_carnum(carnum, phone)
