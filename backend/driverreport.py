@@ -7,21 +7,23 @@ import datetime
 from selenium import webdriver
 from ddt import ddt, data, file_data, unpack
 import utils
-import login
+import globalvar
+
 
 @ddt
 class TestDriverReport(unittest.TestCase):
 
     is_phone = True
+
     @classmethod
     def setUpClass(cls):
-        cls.driver = login.login('HTTP2', 'USER1')
+        cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '司机报班', 'driverReport.do')
-
+    '''
     @classmethod
     def tearDownClass(cls):
         cls.driver.quit()
-
+    '''
     def report_action(self):
         WebDriverWait(self.driver, 5).until(lambda x: x.find_element_by_id('driverUid').get_attribute('value') != '')
         self.driver.execute_script('$("#sel_origin").val("361000")')
@@ -123,13 +125,13 @@ class TestDriverReport(unittest.TestCase):
         '''
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
-    @unittest.skip("直接跳过")
+#    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_phone.json')
     def test_driver_report_by_phone(self, phone):
         report_status = self.driver_report_by_phone(phone)
         self.assertEqual(report_status, '报班')
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_carnum.json')
     def test_driver_report_by_carnum(self, carnum, phone):
         report_status = self.driver_report_by_carnum(carnum, phone)

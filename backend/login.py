@@ -3,7 +3,7 @@ import utils
 import os
 from time import sleep
 from pytesseract import image_to_string
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageGrab
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -23,17 +23,14 @@ def login(url_section, user_section):
 
     sleep(1)
     # 以下为登录验证码自动识别
-
     while True:
         driver.find_element_by_id('imgCode').clear()
-        driver.save_screenshot(os.path.join(utils.get_path(), 'login.png'))
         code_ele = driver.find_element_by_xpath('//*[@id="changeImg"]')
         left = code_ele.location['x']
-        top = code_ele.location['y']
+        top = code_ele.location['y'] + 114  # 偏移量114为经验值，非chrome浏览器未必适用
         right = left + code_ele.size['width']
         down = top + code_ele.size['height']
-        image = Image.open(os.path.join(utils.get_path(), 'login.png'))
-        code_image = image.crop((left, top, right, down))
+        code_image = ImageGrab.grab(bbox=(left, top, right, down))
         imgry = code_image.convert("L")
         sharpness = ImageEnhance.Contrast(imgry)
         sharp_img = sharpness.enhance(2.0)
