@@ -5,15 +5,20 @@ import HTMLTestRunner
 from time import sleep, strftime
 import utils
 import os
+from sys import argv
 import login
 import globalvar
 from customer_call import TestCustomerCall
 
 
 def action_login():
-    driver = login.login('HTTP1', 'USER2')
-    globalvar.init()
-    globalvar.set_value('driver', driver)
+    if len(argv) < 3:
+        print('正确用法：python run.py 环境 用户，共3个参数')
+        exit(1)
+    else:
+        driver = login.login(argv[1], argv[2])
+        globalvar.init()
+        globalvar.set_value('driver', driver)
 
 
 def action_quit():
@@ -23,8 +28,16 @@ def action_quit():
 if __name__ == '__main__':
 
     action_login()
+    '''
     tt = TestCustomerCall()
     tt.getUserInfo(13328775856)
+    tt.selectOrderType('快线')
+#    tt.selectInterOrigin('XM', '厦门市|XMCJ', '软件园二期')
+#    tt.selectInterDestination('XM', '第一中学')
+    tt.selectECount(3)
+    tt.orderExpress('厦门市', '中医院', '厦门市', '第一医院')
+#    tt.selectDate(date='明天')
+#    tt.commit()
     '''
     suite = unittest.TestSuite()
 #    suite.addTest(unittest.makeSuite(TestDriverReport))
@@ -41,7 +54,7 @@ if __name__ == '__main__':
     runner.run(suite)
 #    runner.run(suite, 0, 2)
     file_result.close()
-    '''
+
     sleep(5)
     action_quit()
 

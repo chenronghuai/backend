@@ -19,11 +19,11 @@ class TestDriverReport(unittest.TestCase):
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '司机报班', 'driverReport.do')
-    '''
+
     @classmethod
     def tearDownClass(cls):
-        cls.driver.quit()
-    '''
+        pass
+
     def report_action(self):
         WebDriverWait(self.driver, 5).until(lambda x: x.find_element_by_id('driverUid').get_attribute('value') != '')
         self.driver.execute_script('$("#sel_origin").val("361000")')
