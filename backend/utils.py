@@ -1,4 +1,5 @@
 import os
+import time
 from time import sleep
 import configparser
 from selenium.webdriver.common.by import By
@@ -82,3 +83,57 @@ def switch_frame(driver, mother_menu, child_menu, frame_name):
     sleep(2)  # 预留时间加载js
 
 
+def switch_exist_frame(driver, from_src, to_src):
+    driver.switch_to.default_content()
+    driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, 'iframe[src="/' + to_src + '"]'))
+    driver.execute_script("""$(window.parent.$("iframe[src='/""" + from_src + """']")).parent().removeClass('on');
+    $(window.parent.$("iframe[src='/""" + to_src + """']")).parent().addClass('on')""")
+
+
+def get_table_content(driver, table_selector, row, column):
+    """
+    获取表格单元格数据
+    :param driver:
+    :param table_selector:表格的CSS定位
+    :param row: 单元格的行
+    :param column: 单元格的列
+    :return: 返回单元格数据
+    """
+    try:
+        table_loc = driver.find_element_by_css_selector(table_selector)
+        cell_selector = 'tbody > tr:nth-child(%s) > td:nth-child(%s)' % (row, column)
+    except Exception as msg:  # 异常处理是否合理？
+        print(msg)
+    return table_loc.find_element_by_css_selector(cell_selector).text
+
+
+def get_time(date, t_time):
+    if date == "今天" or date == "":
+        secs = time.time()
+    elif date == "明天":
+        secs = time.time()+86400
+
+    month = time.gmtime(secs).tm_mon
+    month_str = str(month) if month >= 10 else '0' + str(month)
+    day = time.gmtime(secs).tm_mday
+    day_str = str(day) if day >= 10 else '0' + str(day)
+    if t_time == "":
+        hour = time.gmtime(secs).tm_hour+8
+        hour_str = str(hour) if hour >= 10 else '0' + str(hour)
+        minute = time.gmtime(secs).tm_min
+        minute_str = str(minute) if minute >= 10 else '0' + str(minute)
+    else:
+        hour_str = str(t_time)[0:2]
+        minute_str = str(t_time)[2:4]
+
+    t_date = (month_str, day_str)
+    date = '-'.join(t_date)
+    t_time = (hour_str, minute_str)
+    ti = ':'.join(t_time)
+    t_result = (date, ti)
+    return ' '.join(t_result)
+
+
+def convert_to_minute(t):
+    t_t = str(t).split(':')
+    return int(t_t[0])*60 + int(t_t[1])
