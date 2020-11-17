@@ -7,11 +7,12 @@ import time
 from selenium.webdriver.support.select import Select
 from ddt import ddt, data, file_data, unpack
 import utils
+from utils import TestMeta
 import globalvar
 
 
 @ddt
-class TestCustomerCall(unittest.TestCase):
+class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
 
     @classmethod
     def setUpClass(cls):
@@ -275,11 +276,11 @@ class TestCustomerCall(unittest.TestCase):
         self.driver.find_element_by_css_selector('#call-see-order').click()
         sleep(1)
         b_match = False
-        for i in range(len(self.driver.find_elements_by_css_selector('#callOrderPage>table>tbody>tr'))):
-            if str_filter == utils.get_table_content(self.driver, '#callOrderPage>table', i+1, 2):
+        for i in range(1, len(self.driver.find_elements_by_css_selector('#callOrderPage>table>tbody>tr'))+1):
+            if str_filter == utils.get_table_content(self.driver, '#callOrderPage>table', i, 2):
                 b_match = True
                 break
-        return i + 1 if b_match else 0
+        return i if b_match else 0
 
 
 #    @unittest.skip("直接跳过")

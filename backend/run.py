@@ -28,19 +28,9 @@ def action_quit():
 if __name__ == '__main__':
 
     action_login()
-    '''
-    tt = TestCustomerCall()
-    tt.getUserInfo(13328775856)
-    tt.selectOrderType('快线')
-#    tt.selectInterOrigin('XM', '厦门市|XMCJ', '软件园二期')
-#    tt.selectInterDestination('XM', '第一中学')
-    tt.selectECount(3)
-    tt.orderExpress('厦门市', '中医院', '厦门市', '第一医院')
-#    tt.selectDate(date='明天')
-#    tt.commit()
-    '''
+
     suite = unittest.TestSuite()
-#    suite.addTest(unittest.makeSuite(TestDriverReport))
+    suite.addTest(unittest.makeSuite(TestDriverReport))
     suite.addTest(unittest.makeSuite(TestCustomerCall))
     now_time = strftime("%Y-%m-%d %H-%M-%S")
     report_path = Path(os.path.join(utils.get_path(), os.path.pardir) + '//testreport//')

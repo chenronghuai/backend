@@ -137,3 +137,18 @@ def get_time(date, t_time):
 def convert_to_minute(t):
     t_t = str(t).split(':')
     return int(t_t[0])*60 + int(t_t[1])
+
+
+class TestMeta(type):
+    def __new__(cls, name, bases, attrs):
+        i = 10
+        new_attrs = attrs.copy()
+        for k, v in attrs.items():
+            if k.startswith('test') and callable(v):
+                suf = k[4:]
+                new_key = 'test_{}'.format(i) + suf
+                i += 1
+                new_attrs.pop(k)
+                new_attrs[new_key] = v
+        return super().__new__(cls, name, bases, new_attrs)
+

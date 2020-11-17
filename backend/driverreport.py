@@ -11,7 +11,7 @@ import globalvar
 
 
 @ddt
-class TestDriverReport(unittest.TestCase):
+class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
 
     is_phone = True
 
@@ -131,7 +131,7 @@ class TestDriverReport(unittest.TestCase):
         report_status = self.driver_report_by_phone(phone)
         self.assertEqual(report_status, '报班')
 
-    @unittest.skip("直接跳过")
+#    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_carnum.json')
     def test_driver_report_by_carnum(self, carnum, phone):
         report_status = self.driver_report_by_carnum(carnum, phone)
