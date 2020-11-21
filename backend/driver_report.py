@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from time import sleep, strftime
+from sys import argv
 import datetime
 from selenium import webdriver
 from ddt import ddt, data, file_data, unpack
@@ -60,6 +61,11 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
             (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]')))
         self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(15)>a[name="btnReport"]').click()
         self.report_action()
+
+        # 保存司机ID
+        carpooling_driver_id = self.driver.find_element_by_css_selector('tbody>tr').get_attribute('data-uid')
+        globalvar.set_value('carpooling_driver_id', carpooling_driver_id)
+
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
     def driver_report_by_carnum(self, carnum, phone):
@@ -79,18 +85,18 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         except:
             return '找不到该车牌关联的任何司机'
         records = self.driver.find_elements_by_css_selector('table#data_table>tbody>tr')
-        for i in range(len(records)):
-            css = '#data_table>tbody>tr:nth-child(%s)>td:nth-child(5)' % (i + 1)
+        for i in range(1, len(records)+1):
+            css = '#data_table>tbody>tr:nth-child(%s)>td:nth-child(5)' % i
             if self.driver.find_element_by_css_selector(css).text == phone:
                 self.b_driver = True
-                css_report = '#data_table>tbody>tr:nth-child(%s)>td:nth-child(15)>a[name="btnReport"]' % (i + 1)
+                css_report = '#data_table>tbody>tr:nth-child(%s)>td:nth-child(15)>a[name="btnReport"]' % i
                 self.driver.find_element_by_css_selector(css_report).click()
                 break
         if not self.b_driver:
             return '找不到该车牌和电话号码关联的司机'
 
         self.report_action()
-        css_goal = 'tbody>tr:nth-child(%s)>td:nth-child(10)' % (i + 1)
+        css_goal = 'tbody>tr:nth-child(%s)>td:nth-child(10)' % i
         return self.driver.find_element_by_css_selector(css_goal).text
 
     def driver_cancel_report(self, phone):
@@ -114,32 +120,24 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-#        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
-        '''
-        self.driver.execute_script('$("table#data_table>tbody>tr").html("")')
-        WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, '#query_driver'))).click()
-        WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr>td:nth-child(10)')))
-        '''
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
 #    @unittest.skip("直接跳过")
-    @file_data('.\\testcase\\driver_report_phone.json')
+    @file_data('.\\testcase\\driver_report_phone.json' if argv[1] == 'HTTP1' else '.\\testcase\\driver_report_p.json')
     def test_driver_report_by_phone(self, phone):
         report_status = self.driver_report_by_phone(phone)
         self.assertEqual(report_status, '报班')
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_carnum.json')
     def test_driver_report_by_carnum(self, carnum, phone):
         report_status = self.driver_report_by_carnum(carnum, phone)
         self.assertEqual(report_status, '报班')
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_phone.json')
-    def test_driver_zcancel_report(self, phone):
+    def test_driver_cancel_report(self, phone):
         report_status = self.driver_cancel_report(phone)
         self.assertEqual(report_status, '未报班')
 

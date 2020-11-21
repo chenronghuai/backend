@@ -77,7 +77,9 @@ def switch_frame(driver, mother_menu, child_menu, frame_name):
     driver.execute_script("$('.side-tit').filter(function(index){return $(this).text().indexOf('" + mother_menu +
                           "')>0;}).click()")
     sleep(1)
-    driver.find_element_by_css_selector('[tit=' + child_menu + ']').click()
+    we_childmenu = driver.find_element_by_css_selector('[tit=' + child_menu + ']')
+    we_childmenu.location_once_scrolled_into_view
+    we_childmenu.click()
     WebDriverWait(driver, 5).until(
         EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src="/' + frame_name + '"]')))
     sleep(2)  # 预留时间加载js

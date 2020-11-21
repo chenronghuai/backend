@@ -1,4 +1,4 @@
-from driverreport import TestDriverReport
+from driver_report import TestDriverReport
 from pathlib import Path
 import unittest
 import HTMLTestRunner
@@ -9,6 +9,7 @@ from sys import argv
 import login
 import globalvar
 from customer_call import TestCustomerCall
+from inter_center import TestInterCenter
 
 
 def action_login():
@@ -32,6 +33,7 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestDriverReport))
     suite.addTest(unittest.makeSuite(TestCustomerCall))
+    suite.addTest(unittest.makeSuite(TestInterCenter))
     now_time = strftime("%Y-%m-%d %H-%M-%S")
     report_path = Path(os.path.join(utils.get_path(), os.path.pardir) + '//testreport//')
     if report_path.exists():

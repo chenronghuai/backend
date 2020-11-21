@@ -300,6 +300,11 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         self.selectPCount(count)
         self.commit()
         i = self.checkitem(assert_dict["order_type"])
+        # 保存订单ID
+        css = '#callOrderPage>table>tbody>tr:nth-child({})'.format(i)
+        carpooling_order_id = self.driver.find_element_by_css_selector(css).get_attribute('order-id')
+        globalvar.set_value('carpooling_order_id', carpooling_order_id)
+
         rs_date = utils.get_table_content(self.driver, '#callOrderPage>table', i, 1)
         l1_date = str(rs_date).split(' ')
         l2_date = str(assert_dict['date_time']).split(' ')
@@ -310,7 +315,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_count = int(utils.get_table_content(self.driver, '#callOrderPage>table', i, 3))
         self.assertEqual(assert_dict['count'], rs_count)
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\order_charter.json')
     def test_order_charter(self, phone, by_phone, origin_region_index, origin_region, origin_addr, des_region_index, des_addr,
                               date, time):
@@ -336,7 +341,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_count = int(utils.get_table_content(self.driver, '#callOrderPage>table', i, 3))
         self.assertEqual(1, rs_count)
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\order_express.json')
     def test_order_express(self, phone, receive_phone, origin_region_index, origin_region, origin_addr, des_region_index,
                            des_addr, date, t_time):
@@ -362,7 +367,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_count = int(utils.get_table_content(self.driver, '#callOrderPage>table', i, 3))
         self.assertEqual(1, rs_count)
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\order_dayscharter.json')
     def test_order_dayscharter(self, phone, by_phone, origin_region_index, origin_region, origin_addr,
                            des_region_index, time_long, des_addr, date, time):
@@ -390,7 +395,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_count = int(utils.get_table_content(self.driver, '#callOrderPage>table', i, 3))
         self.assertEqual(1, rs_count)
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\order_helpdrive.json')
     def test_order_helpdrive(self, phone, receive_phone, city, origin_addr, des_addr):
         assert_dict = {}
@@ -413,7 +418,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_count = int(utils.get_table_content(self.driver, '#callOrderPage>table', i, 3))
         self.assertEqual(1, rs_count)
 
-#    @unittest.skip("直接跳过")
+    @unittest.skip("直接跳过")
     @file_data('.\\testcase\\order_fastline.json')
     def test_order_fastline(self, phone, by_phone, origin_city, origin_addr, des_city, des_addr, customer_count):
         self.create_fastline_flight()
@@ -433,14 +438,14 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         i = self.checkitem(assert_dict["order_type"])
         rs_date = utils.get_table_content(self.driver, '#callOrderPage>table', i, 1)
         l1_date = str(rs_date).split(' ')
-        self.assertEqual(l1_date[0], assert_dict['date'])
-        self.assertEqual(l1_date[1], assert_dict['time'])
+        self.assertEqual(assert_dict['date'], l1_date[0])
+        self.assertEqual(assert_dict['time'], l1_date[1])
         rs_type = utils.get_table_content(self.driver, '#callOrderPage>table', i, 2)
         self.assertEqual(assert_dict['order_type'], rs_type)
         rs_count = utils.get_table_content(self.driver, '#callOrderPage>table', i, 3)
         self.assertEqual(customer_count, rs_count)
 
-#    @unittest.skip('直接跳过')
+    @unittest.skip('直接跳过')
     @file_data('.\\testcase\\order_inner.json')
     def test_order_inner(self, phone, by_phone,  origin_region_index, origin_region, origin_addr, des_addr, t_time):
         assert_dict = {}
