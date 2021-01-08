@@ -1,4 +1,4 @@
 {
-	"case1":{"carnum":"闽D223EF","phone":"17700000000"},
-	"case2":{"carnum":"闽C57D12","phone":"13345678965"}
+	"case1":{"carnum":"闽D888888","phone":"17700000000", "ori_val": "361000", "des_val": "361000"},
+	"case2":{"carnum":"闽DV7710","phone":"13345678965", "ori_val": "361000", "des_val": "361000"}
 }

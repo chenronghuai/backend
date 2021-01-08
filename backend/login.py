@@ -26,7 +26,7 @@ def login(url_section, user_section):
     # 以下为登录验证码自动识别
     while True:
         driver.find_element_by_id('imgCode').clear()
-        code_ele = driver.find_element_by_xpath('//*[@id="changeImg"]')
+        code_ele = driver.find_element_by_xpath('//*[@id="changeImg"]')   # 此处出现几率很低的找不到，实际已经计算识别正确，循环时序待查
         left = code_ele.location['x']
         top = code_ele.location['y'] + offset_height
         right = left + code_ele.size['width']
@@ -58,7 +58,7 @@ def login(url_section, user_section):
     # 如果出现乘客安全预警弹窗，关闭
 
     try:
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, 1).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="layui-layer layui-layer-page  layer-anim"]>span.layui-layer-setwin>a'))).click()
     except:
         pass

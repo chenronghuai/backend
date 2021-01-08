@@ -9,7 +9,14 @@ from sys import argv
 import login
 import globalvar
 from customer_call import TestCustomerCall
+import logging
 from inter_center import TestInterCenter
+from order_manage import TestOrderManage
+from flight_center import TestFlightCenter
+from flight_order_manage import TestFlightOrderManage
+from flights_manage import TestFlightsManage
+
+logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 def action_login():
@@ -30,10 +37,21 @@ if __name__ == '__main__':
 
     action_login()
 
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestDriverReport))
-    suite.addTest(unittest.makeSuite(TestCustomerCall))
-    suite.addTest(unittest.makeSuite(TestInterCenter))
+    suite_flow = unittest.TestSuite()
+    suite_one = unittest.TestSuite()
+    suite_all = unittest.TestSuite()
+
+    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDriverReport))
+    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))
+    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInterCenter))
+    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestOrderManage))
+    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightCenter))
+    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightOrderManage))
+
+    suite_one.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))
+
+#    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightsManage))
+
     now_time = strftime("%Y-%m-%d %H-%M-%S")
     report_path = Path(os.path.join(utils.get_path(), os.path.pardir) + '//testreport//')
     if report_path.exists():
@@ -43,11 +61,16 @@ if __name__ == '__main__':
     file_path = os.path.abspath(os.path.join(utils.get_path(), os.path.pardir)) + "//testreport//" + now_time + "_result.html"
     file_result = open(file_path, 'wb')
     runner = HTMLTestRunner.HTMLTestRunner(file_result, 2, u"业务后台测试报告", u"执行概况")
-    runner.run(suite)
+    if argv[3] == 'auto':
+        runner.run(suite_one)
+    elif argv[3] == 'flow':
+        runner.run(suite_flow)
+    elif argv[3] == 'all':
+        runner.run(suite_all)
 #    runner.run(suite, 0, 2)
     file_result.close()
 
-    sleep(5)
+    sleep(1)
     action_quit()
 
 

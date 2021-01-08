@@ -8,7 +8,13 @@ import datetime
 from selenium import webdriver
 from ddt import ddt, data, file_data, unpack
 import utils
+from utils import DriverType
 import globalvar
+import re
+from common import Driver
+import logging
+
+logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 @ddt
@@ -25,10 +31,10 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
     def tearDownClass(cls):
         pass
 
-    def report_action(self):
+    def report_action(self, ori_val, des_val):
         WebDriverWait(self.driver, 5).until(lambda x: x.find_element_by_id('driverUid').get_attribute('value') != '')
-        self.driver.execute_script('$("#sel_origin").val("361000")')
-        self.driver.execute_script('$("#sel_destination").val("361000")')
+        self.driver.execute_script('$("#sel_origin").val("' + ori_val + '")')
+        self.driver.execute_script('$("#sel_destination").val("' + des_val + '")')
         sleep(2)
         self.driver.find_element_by_css_selector('#report').click()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')
@@ -36,16 +42,10 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
-        if self.is_phone:
-            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#query_driver'))).click()
-        else:
-            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#query_carno'))).click()
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr')))
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
-        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
 
-    def driver_report_by_phone(self, phone):
+    def driver_report_by_phone(self, phone, ori_val, des_val):
         e_phone = self.driver.find_element_by_css_selector('#phone')
         e_phone.clear()
         self.driver.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
@@ -60,15 +60,20 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(
             (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]')))
         self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(15)>a[name="btnReport"]').click()
-        self.report_action()
+        self.report_action(ori_val, des_val)
 
-        # 保存司机ID
-        carpooling_driver_id = self.driver.find_element_by_css_selector('tbody>tr').get_attribute('data-uid')
-        globalvar.set_value('carpooling_driver_id', carpooling_driver_id)
-
+        # 添加司机进池
+        driver_id = self.driver.find_element_by_css_selector('tbody>tr').get_attribute('data-uid')
+        license_text = self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(11)').text
+        max_user = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(1))
+        max_package = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(2))
+        car_type = self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(7)').text
+        oc_center = self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(14)').text
+        driver = Driver(driver_id, max_user, max_package, car_type, oc_center)
+        globalvar.add_driver(driver)
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
-    def driver_report_by_carnum(self, carnum, phone):
+    def driver_report_by_carnum(self, carnum, phone, ori_val, des_val):
         self.is_phone = False
         self.b_driver = False
         e_carnum = self.driver.find_element_by_css_selector('#selCar')
@@ -95,8 +100,19 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         if not self.b_driver:
             return '找不到该车牌和电话号码关联的司机'
 
-        self.report_action()
-        css_goal = 'tbody>tr:nth-child(%s)>td:nth-child(10)' % i
+        self.report_action(ori_val, des_val)
+
+        # 添加司机进池
+        css_record = 'tbody>tr:nth-child({})'.format(i)
+        driver_id = self.driver.find_element_by_css_selector(css_record).get_attribute('data-uid')
+        license_text = self.driver.find_element_by_css_selector(css_record+'>td:nth-child(11)').text
+        max_user = re.search(r'(\d+)\D+(\d+)\D+', license_text).group(1)
+        max_package = re.search(r'(\d+)\D+(\d+)\D+', license_text).group(2)
+        car_type = self.driver.find_element_by_css_selector(css_record+'>td:nth-child(7)').text
+        oc_center = self.driver.find_element_by_css_selector(css_record+'>td:nth-child(14)').text
+        driver = Driver(driver_id, max_user, max_package, car_type, oc_center)
+        globalvar.add_driver(driver)
+        css_goal = css_record+'>td:nth-child(10)'
         return self.driver.find_element_by_css_selector(css_goal).text
 
     def driver_cancel_report(self, phone):
@@ -123,20 +139,27 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
+    @data((13345678965, "361000", "361000"), (17700000000, "361000", "361000"))
+    @unpack
 #    @unittest.skip("直接跳过")
-    @file_data('.\\testcase\\driver_report_phone.json' if argv[1] == 'HTTP1' else '.\\testcase\\driver_report_p.json')
-    def test_driver_report_by_phone(self, phone):
-        report_status = self.driver_report_by_phone(phone)
+#    @file_data('.\\testcase\\driver_report_phone.json' if argv[1] == 'HTTP1' else '.\\testcase\\driver_report_p.json')
+    def test_driver_report_by_phone(self, phone, ori_val, des_val):
+        report_status = self.driver_report_by_phone(phone, ori_val, des_val)
         self.assertEqual(report_status, '报班')
 
+#    @data({"carnum":"闽C57D12","phone":"13345678965", "ori_val": "361000", "des_val": "361000"},
+#          {"carnum":"闽D22345","phone":"13565498721", "ori_val": "361000", "des_val": "361000"})
+    @unpack
     @unittest.skip("直接跳过")
     @file_data('.\\testcase\\driver_report_carnum.json')
-    def test_driver_report_by_carnum(self, carnum, phone):
-        report_status = self.driver_report_by_carnum(carnum, phone)
+    def test_driver_report_by_carnum(self, carnum, phone, ori_val, des_val):
+        report_status = self.driver_report_by_carnum(carnum, phone, ori_val, des_val)
         self.assertEqual(report_status, '报班')
 
+    @data({"phone": "17700000000"}, {"phone": "13345678965"})
+    @unpack
     @unittest.skip("直接跳过")
-    @file_data('.\\testcase\\driver_report_phone.json')
+#    @file_data('.\\testcase\\driver_report_phone.json')
     def test_driver_cancel_report(self, phone):
         report_status = self.driver_cancel_report(phone)
         self.assertEqual(report_status, '未报班')
