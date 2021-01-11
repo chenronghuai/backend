@@ -20,8 +20,8 @@ logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(l
 
 
 def action_login():
-    if len(argv) < 3:
-        print('正确用法：python run.py 环境 用户，共3个参数')
+    if len(argv) < 4:
+        print('正确用法：python run.py 环境 用户 类型，共4个参数')
         exit(1)
     else:
         driver = login.login(argv[1], argv[2])

@@ -128,6 +128,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                     return driver.driver_id
                 elif index == len(globalvar.driver_pool)-1:
                     raise FoundDriverError(order.order_type)
+                    return '没有合适的司机'
 
         elif order.order_type == OrderType.EXPRESS:
             for index, driver in enumerate(globalvar.driver_pool):
@@ -136,30 +137,37 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                     return driver.driver_id
                 elif index == len(globalvar.driver_pool)-1:
                     raise FoundDriverError(order.order_type)
+                    return '没有合适的司机'
 
         elif order.order_type in [OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
             free_drivers = list(filter(lambda x: x.charter_count == 0 and x.appoint_user_count == 0, globalvar.driver_pool))
-            for index, driver in enumerate(free_drivers):
-                if CarType.PRIORITY_DIST[driver.car_type] >= CarType.PRIORITY_DIST[order.car_type]:
-                    return driver.driver_id
-                elif index == len(free_drivers) - 1:
-                    raise FoundDriverError(order.order_type)
+            if len(free_drivers) == 0:
+                return '没有合适的司机'
+            else:
+                for index, driver in enumerate(free_drivers):
+                    if CarType.PRIORITY_DIST[driver.car_type] >= CarType.PRIORITY_DIST[order.car_type]:
+                        driver.charter_count += 1
+                        return driver.driver_id
+                    elif index == len(free_drivers) - 1:
+                        raise FoundDriverError(order.order_type)
+                        return '没有合适的司机'
 
-    test_case = ["物流中心", "XMC", "361000", "XM", "361000", 1],["物流中心", "XMC", "361000", "XM", "361000", 2],["物流中心", "XMC", "361000", "XM", "361000", 3],["物流中心", "XMC", "361000", "XM", "361000", 4],["物流中心", "XMC", "361000", "XM", "361000", 5]
-    prod_case = ["漳州运营中心", "XMC", "361000", "XM", "361000", 1],["漳州运营中心", "XMC", "361000", "XM", "361000", 2],["漳州运营中心", "XMC", "361000", "XM", "361000", 3],["漳州运营中心", "XMC", "361000", "XM", "361000", 4],["漳州运营中心", "XMC", "361000", "XM", "361000", 5]
-#    @unittest.skip("直接跳过")
+
+    test_case = ["物流中心", "XMC", "361000", "XM", "361000", 1],["物流中心", "XMC", "361000", "XM", "361000", 2],["物流中心", "XMC", "361000", "XM", "361000", 3],["物流中心", "XMC", "361000", "XM", "361000", 4],["物流中心", "XMC", "361000", "XM", "361000", 5], ["物流中心", "XMC", "361000", "XM", "361000", 6]
+    prod_case = ["漳州运营中心", "XMC", "361000", "XM", "361000", 1],["漳州运营中心", "XMC", "361000", "XM", "361000", 2],["漳州运营中心", "XMC", "361000", "XM", "361000", 3],["漳州运营中心", "XMC", "361000", "XM", "361000", 4],["漳州运营中心", "XMC", "361000", "XM", "361000", 5], ["漳州运营中心", "XMC", "361000", "XM", "361000", 6]
+
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(*test_case if argv[1] == 'HTTP1' else prod_case)
     @unpack
-#    @file_data('.\\testcase\\appoint_carpooling.json')
     def test_appoint(self, center, origin, ori_value, destination, des_value, index):
-#        self.input_center_line(center, origin, ori_value, destination, des_value)
-#        for order in globalvar.order_pool:
         inter_orders = []
         for order in globalvar.order_pool:
             if order.order_type in [OrderType.CARPOOLING, OrderType.EXPRESS, OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
                 inter_orders.append(order)
         order = inter_orders[index-1]
         driver_id = self.filte_driver(order)
+        if driver_id == '没有合适的司机':
+            return 'N/A'
         self.appoint_order(order.order_id, driver_id)
         self.driver.find_element_by_css_selector('div.nav-right.td-opera > a[title="已派"]').click()
         sleep(1)

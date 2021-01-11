@@ -13,8 +13,12 @@ import globalvar
 @ddt
 class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
 
+#    inter_orders = list(filter(lambda order: order.order_type in [OrderType.CARPOOLING, OrderType.CHARACTER, OrderType.EXPRESS, OrderType.DAYSCHARACTER], globalvar.order_pool))
     @classmethod
     def setUpClass(cls):
+        cls.inter_orders = list(filter(
+            lambda order: order.order_type in [OrderType.CARPOOLING, OrderType.CHARACTER, OrderType.EXPRESS,
+                                               OrderType.DAYSCHARACTER], globalvar.order_pool))
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '订单管理', 'orderManage.do')
         utils.input_ori_des(cls.driver, "XMC", "361000", "XM", "361000")
@@ -28,7 +32,7 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
             EC.visibility_of_element_located((By.CSS_SELECTOR, operator_css_locator))).click()
         driver.switch_to.parent_frame()
 
-    @data(1,2,3,4,5)
+    @data(1, 2, 3, 4, 5, 6)
 #    @unpack
 #    @file_data('.\\testcase\\order_manage.json')
 #    def test_complete_order(self, origin, ori_value, destination, des_value):
@@ -36,7 +40,7 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
 #        utils.input_ori_des(self.driver, origin, ori_value, destination, des_value)
         self.driver.find_element_by_css_selector('#btnQuery').click()
 #        for order in globalvar.order_pool:
-        order = globalvar.order_pool[index-1]
+        order = self.inter_orders[index-1]
         css = utils.get_record_by_attr(self.driver, 'table#data_table>tbody>tr', 'order-list-id', order.order_id)
 
         if order.order_status == OrderStatus.APPOINTED:

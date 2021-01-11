@@ -98,8 +98,11 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         status = True if driver_phone in driver_phone_list else False
         self.assertTrue(status)
 
+    test_case = ["漳州运营中心", "高林SM专线", "13345678966"],
+    prod_case = ["漳州运营中心", "厦门测试班线", "17700000001"],
+
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data({"center":"漳州运营中心", "line":"高林SM专线", "driver_phone":"13345678966"})
+    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
     @unpack
     def test_appoint(self, center, line, driver_phone):
         self.input_center_line(center, line)

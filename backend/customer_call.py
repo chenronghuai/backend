@@ -331,8 +331,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         count = self.driver.find_element_by_css_selector(css + '>td:nth-child(3)').text
         self.create_order(order_id, order_type, appoint_time, car_type, count)
 
-    @unittest.skip("直接跳过")
-    @file_data('.\\testcase\\order_carpooling1.json')
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @file_data('.\\testcase\\order_carpooling.json')
     def test_order_carpooling(self, phone, by_phone, origin_region_index, origin_region, origin_addr, des_region_index, des_addr, date, time, count, flow):
         assert_dict = {}
         assert_dict["phone"] = phone if by_phone == "" else by_phone
@@ -360,8 +360,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(assert_dict['count'], rs_count)
 
-#    @unittest.skip("直接跳过")
-    @file_data('.\\testcase\\order_character1.json')
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @file_data('.\\testcase\\order_character.json')
     def test_order_charter(self, phone, by_phone, origin_region_index, origin_region, origin_addr, des_region_index,
                                des_addr, car_type, date, time, flow):
         assert_dict = {}
@@ -389,7 +389,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
 
-    @unittest.skip("直接跳过")
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_express.json')
     def test_order_express(self, phone, receive_phone, origin_region_index, origin_region, origin_addr, des_region_index,
                            des_addr, date, t_time, flow):
@@ -417,7 +417,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
 
-    @unittest.skip('直接跳过')
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_inner.json')
     def test_order_inner(self, phone, by_phone,  origin_region_index, origin_region, origin_addr, des_addr, t_time, flow):
         assert_dict = {}
@@ -450,7 +450,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_byphone = utils.get_cell_content(self.driver, '#callOrderPage>table', i, 4)
         self.assertEqual(assert_dict['by_phone'], rs_byphone)
 
-    @unittest.skip("直接跳过")
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_dayscharter.json')
     def test_order_dayscharter(self, phone, by_phone, origin_region_index, origin_region, origin_addr,
                                des_region_index, time_long, des_addr, car_type, date, time, flow):
@@ -481,10 +481,13 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
 
-#    @data({"phone":"14759250515","by_phone": "13328775856", "origin_city":"福建省|三明市|350400", "origin_addr": "大田县汽车站","des_city": "福建省|三明市|350400","des_addr": "大田出口", "customer_count":"3", "flow":"T"})
-#    @unpack
-    @unittest.skip("直接跳过")
-    @file_data('.\\testcase\\order_fastline.json')
+    test_case = ["14759250515", "13328775856", "福建省|厦门市|350200", "高林居住区", "福建省|厦门市|350200", "中医院", "3", "T"],
+    prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田县汽车站", "福建省|三明市|350400", "大田出口", "3", "T"],
+
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
+    @unpack
+#    @file_data('.\\testcase\\order_fastline.json')
     def test_order_fastline(self, phone, by_phone, origin_city, origin_addr, des_city, des_addr, customer_count, flow):
         if flow == 'T':
             self.create_fastline_flight()
@@ -531,7 +534,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             rs_count = utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3)
             self.assertEqual(customer_count, rs_count)
 
-    @unittest.skip("直接跳过")
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_helpdrive.json')
     def test_order_helpdrive(self, phone, receive_phone, city, origin_addr, des_addr, flow):
         assert_dict = {}
