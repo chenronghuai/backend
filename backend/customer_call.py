@@ -13,11 +13,13 @@ import globalvar
 import logging
 from sys import argv
 from common import Order
+from selenium.webdriver.common.keys import Keys
 
 
 logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 count = 1
+_create_flag = True
 
 
 @ddt
@@ -92,8 +94,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
         we_ori_addr.send_keys(origin_addr)
-        WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点POI无法获取').click()
+        WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点POI无法获取').click()  # 此行代码偶发超时异常，增加时间试试效果
         WebDriverWait(self.driver, 5).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')))
         sleep(0.5)
@@ -120,8 +122,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         we_des_addr.send_keys(des_addr)
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
-            '//*[@id="end-lists-penal"]/li[1]')), '终点POI无法获取').click()
+        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+            '#end-lists-penal>li:nth-child(1)')), '终点POI无法获取').click()
 
     def orderInnerCity(self, city_index, city_region, ori_addr, des_addr):
         """
@@ -166,17 +168,18 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         self.driver.find_element_by_css_selector('#selCenter').click()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
             '//*[@id="selCenter-suggest"]/div[@text="10596|漳州运营中心"]')), '运营中心无法选取').click()
-        self.driver.find_element_by_css_selector('#selLine').clear()
+#        self.driver.find_element_by_css_selector('#selLine').clear()
+        self.driver.find_element_by_css_selector('#selLine').send_keys(Keys.BACKSPACE)
         if argv[1] == 'HTTP1':
             self.driver.find_element_by_css_selector('#selLine').send_keys('高林SM专线')
         else:
             self.driver.find_element_by_css_selector('#selLine').send_keys('厦门测试班线')
-        self.driver.find_element_by_css_selector('#flightsNo').send_keys('CS001')
         self.driver.find_element_by_css_selector('#saleSeats').send_keys(20)
+        sleep(1)
         self.driver.find_element_by_css_selector('#flightsDate').click()
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '.laydate-btns-confirm'))).click()
-        secs = time.time() + 1800
+        secs = time.time() + 600
         hour = time.gmtime(secs).tm_hour + 8
         if hour < 10:
             hour = '0' + str(hour)
@@ -184,7 +187,11 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         if minute < 10:
             minute = '0' + str(minute)
         time_str = str(hour) + ":" + str(minute)
+        flight_no_str = 'CS' + str(hour) + str(minute)
+        sleep(1)
         self.driver.find_element_by_css_selector('#flightsDispatchedTime').send_keys(time_str)
+        self.driver.find_element_by_css_selector('#flightsNo').send_keys(flight_no_str)
+        globalvar.set_value('FlightNo', flight_no_str)
         self.driver.find_element_by_css_selector('#btnSave').click()
         self.driver.switch_to.parent_frame()
         utils.switch_exist_frame(self.driver, 'flights.do', 'customerCall.do')
@@ -194,14 +201,14 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             EC.presence_of_all_elements_located((By.XPATH, '//div[@id="startName-suggest"]/div')))
         self.driver.find_element(By.ID, 'startName').click()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.ID, 'startName-suggest')))
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
+        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH,
          '//*[@id="startName-suggest"]/div[@text="' + ori_city + '"]')), '起始城市无法获取').click()
         we_ori_addr = self.driver.find_element_by_id('startAddr')
         we_ori_addr.click()
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//*[@id="start-lists-penal"]/li')))
         we_ori_addr.send_keys(ori_addr)
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(self.driver, 15).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="start-lists-penal"]/li[1]')), '起点POI无法获取').click()
 
         WebDriverWait(self.driver, 5).until(
@@ -220,6 +227,9 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
             '终点POI无法获取').click()
+        WebDriverWait(self.driver, 5).until(
+            EC.invisibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
+            '终点下拉POI超时不消失')
 
     def orderHelpDrive(self, city, ori_addr, des_addr):
         WebDriverWait(self.driver, 5).until(
@@ -297,19 +307,25 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         '''
 
-    def checkitem(self, str_filter):
+    def checkitem(self, str_filter, by_phone = None):
         """
         确认目标订单的位置（当账号有较多的预约订单时【超过5单】有可能获取不到）
         :param str_filter: 订单类型
         :return: 客户来电页订单所在行数，匹配不到返回0
         """
-        self.driver.find_element_by_css_selector('#call-see-order').click()
+#        self.driver.find_element_by_css_selector('#call-see-order').click()
+        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#call-see-order'))).click()
         sleep(1)
         b_match = False
         for i in range(1, len(self.driver.find_elements_by_css_selector('#callOrderPage>table>tbody>tr'))+1):
-            if str_filter == utils.get_cell_content(self.driver, '#callOrderPage>table', i, 2):
-                b_match = True
-                break
+            if str_filter != '快巴':
+                if str_filter == utils.get_cell_content(self.driver, '#callOrderPage>table', i, 2):
+                    b_match = True
+                    break
+            else:
+                if str_filter == utils.get_cell_content(self.driver, '#callOrderPage>table', i, 2) and by_phone == utils.get_cell_content(self.driver, '#callOrderPage>table', i, 4):
+                    b_match = True
+                    break
         return i if b_match else 0
 
     def create_order(self, order_id, order_type, appoint_time, car_type=CarType.ANY, count=1):
@@ -332,7 +348,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         self.create_order(order_id, order_type, appoint_time, car_type, count)
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @file_data('.\\testcase\\order_carpooling.json')
+    @file_data('.\\testcase\\order_carpooling.json' if argv[3] == 'flow' else '.\\testcase\\order_carpooling1.json')
     def test_order_carpooling(self, phone, by_phone, origin_region_index, origin_region, origin_addr, des_region_index, des_addr, date, time, count, flow):
         assert_dict = {}
         assert_dict["phone"] = phone if by_phone == "" else by_phone
@@ -361,7 +377,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['count'], rs_count)
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @file_data('.\\testcase\\order_character.json')
+    @file_data('.\\testcase\\order_character.json' if argv[3] == 'flow' else '.\\testcase\\order_character1.json')
     def test_order_charter(self, phone, by_phone, origin_region_index, origin_region, origin_addr, des_region_index,
                                des_addr, car_type, date, time, flow):
         assert_dict = {}
@@ -390,7 +406,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(1, rs_count)
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @file_data('.\\testcase\\order_express.json')
+    @file_data('.\\testcase\\order_express.json' if argv[3] == 'flow' else '.\\testcase\\order_express1.json')
     def test_order_express(self, phone, receive_phone, origin_region_index, origin_region, origin_addr, des_region_index,
                            des_addr, date, t_time, flow):
         assert_dict = {}
@@ -417,8 +433,14 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
 
+    '''
+    test_case = ["14759250515", "5603293", "XM", "厦门市|XMSmm", "软件园二期", "软件园观日路24号", "", "T"],
+    prod_case = ["14759250515", "5603293", "XM", "厦门市|XMSN", "软件园二期", "软件园观日路24号", "", "T"],
+
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @file_data('.\\testcase\\order_inner.json')
+    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
+    @unpack
+#    @file_data('.\\testcase\\order_inner.json')
     def test_order_inner(self, phone, by_phone,  origin_region_index, origin_region, origin_addr, des_addr, t_time, flow):
         assert_dict = {}
         assert_dict["phone"] = phone
@@ -480,17 +502,19 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['order_type'], rs_type)
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
-
-    test_case = ["14759250515", "13328775856", "福建省|厦门市|350200", "高林居住区", "福建省|厦门市|350200", "中医院", "3", "T"],
-    prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田县汽车站", "福建省|三明市|350400", "大田出口", "3", "T"],
+    '''
+    test_case = ["14759250515", "13328775856", "福建省|厦门市|350200", "高林居住区", "福建省|厦门市|350200", "中医院", "1", "T"],
+    prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田县汽车站", "福建省|三明市|350400", "大田出口", "1", "T"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
-    @unpack
-#    @file_data('.\\testcase\\order_fastline.json')
+#    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
+#    @unpack
+    @file_data('.\\testcase\\order_fastline.json' if argv[3] == 'flow' and argv[1] == 'HTTP1' else '.\\testcase\\order_fastline1.json')
     def test_order_fastline(self, phone, by_phone, origin_city, origin_addr, des_city, des_addr, customer_count, flow):
-        if flow == 'T':
+        global _create_flag
+        if flow == 'T' and _create_flag:
             self.create_fastline_flight()
+            _create_flag = False
         assert_dict = {}
         assert_dict["phone"] = phone
         assert_dict["order_type"] = "快巴"
@@ -515,6 +539,9 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
                 count = 1
             sleep(0.5)
         if flow == 'T':
+            self.driver.find_element_by_css_selector('#flightsAll').click()
+            flight_no = globalvar.get_value('FlightNo')
+            WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, f'#flightsAll-suggest>div[flights_no="{flight_no}"]'))).click()
             WebDriverWait(self.driver, 5).until(lambda driver: driver.find_element_by_css_selector
             ('div#suggest>ul>li#suggest0').is_displayed(), '没有合适班线线路')
             WebDriverWait(self.driver, 5).until(
@@ -523,7 +550,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             assert_dict['time'] = str(self.driver.execute_script('return $("#flightsAll").val()'))[:5]
             sleep(2)  # 暂停确保同步
             self.commit(pricetip_flag=False)
-            i = self.checkitem(assert_dict["order_type"])
+            i = self.checkitem(assert_dict["order_type"], by_phone=by_phone)
             self.save_order(i, OrderType.FASTLINE)
             rs_date = utils.get_cell_content(self.driver, '#callOrderPage>table', i, 1)
             l1_date = str(rs_date).split(' ')
@@ -533,9 +560,14 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['order_type'], rs_type)
             rs_count = utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3)
             self.assertEqual(customer_count, rs_count)
+    '''
+    test_case = ["14759250515", "5603293", "厦门市|xmsndj",  "软件园二期", "软件园观日路24号", "T"],
+    prod_case = ["14759250515", "5603293", "厦门市|xmsdj",  "软件园二期", "软件园观日路24号", "T"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @file_data('.\\testcase\\order_helpdrive.json')
+    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
+    @unpack
+#    @file_data('.\\testcase\\order_helpdrive.json')
     def test_order_helpdrive(self, phone, receive_phone, city, origin_addr, des_addr, flow):
         assert_dict = {}
         assert_dict["phone"] = phone
@@ -558,7 +590,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['order_type'], rs_type)
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
-
+    '''
 
 
 

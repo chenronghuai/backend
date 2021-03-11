@@ -120,112 +120,150 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         self.driver.switch_to.parent_frame()
         self.driver.switch_to.parent_frame()
 
-    def filte_driver(self, order):
-        if order.order_type == OrderType.CARPOOLING:
-            for index, driver in enumerate(globalvar.driver_pool):
+    def add_fastline_order(self, order_id):
+        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
+        try:
+            orders = self.driver.find_elements_by_css_selector(
+                'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')
+        except Exception:
+            sleep(1)
+            orders = self.driver.find_elements_by_css_selector(
+                'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')
+        id_lists = [x.get_attribute('order-id') for x in orders]
+        for index, id_ in enumerate(id_lists):
+            if id_ == order_id:
+                expect_css = 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li:nth-child({})'.format(index + 1)
+                self.driver.find_element_by_css_selector(expect_css).click()
+                sleep(1)
+                self.driver.find_element_by_css_selector('#orderAddBtn').click()
+                sleep(1)
+                self.driver.find_element_by_css_selector('#closeBtn').click()
+                break
+        self.driver.switch_to.parent_frame()
+        self.driver.switch_to.parent_frame()
+
+    def filter_driver(self, order):
+        net_drivers = list(filter(lambda _driver: _driver.driver_type == DriverType.NET_DRIVER, globalvar.driver_pool))
+        if order.order_type in [OrderType.CARPOOLING, OrderType.FASTLINE]:
+            for index, driver in enumerate(net_drivers):
                 if order.order_count <= driver.max_user-driver.appoint_user_count and driver.charter_count == 0:
                     driver.appoint_user_count += order.order_count
-                    return driver.driver_id
-                elif index == len(globalvar.driver_pool)-1:
+                    return driver
+                elif index == len(net_drivers)-1:
                     raise FoundDriverError(order.order_type)
                     return '没有合适的司机'
 
         elif order.order_type == OrderType.EXPRESS:
-            for index, driver in enumerate(globalvar.driver_pool):
+            for index, driver in enumerate(net_drivers):
                 if order.order_count <= driver.max_package-driver.appoint_package_count:
                     driver.appoint_package_count += order.order_count
-                    return driver.driver_id
-                elif index == len(globalvar.driver_pool)-1:
+                    return driver
+                elif index == len(net_drivers)-1:
                     raise FoundDriverError(order.order_type)
                     return '没有合适的司机'
 
         elif order.order_type in [OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
-            free_drivers = list(filter(lambda x: x.charter_count == 0 and x.appoint_user_count == 0, globalvar.driver_pool))
+            free_drivers = list(filter(lambda x: x.charter_count == 0 and x.appoint_user_count == 0, net_drivers))
             if len(free_drivers) == 0:
                 return '没有合适的司机'
             else:
                 for index, driver in enumerate(free_drivers):
                     if CarType.PRIORITY_DIST[driver.car_type] >= CarType.PRIORITY_DIST[order.car_type]:
                         driver.charter_count += 1
-                        return driver.driver_id
+                        return driver
                     elif index == len(free_drivers) - 1:
                         raise FoundDriverError(order.order_type)
                         return '没有合适的司机'
 
-
-    test_case = ["物流中心", "XMC", "361000", "XM", "361000", 1],["物流中心", "XMC", "361000", "XM", "361000", 2],["物流中心", "XMC", "361000", "XM", "361000", 3],["物流中心", "XMC", "361000", "XM", "361000", 4],["物流中心", "XMC", "361000", "XM", "361000", 5], ["物流中心", "XMC", "361000", "XM", "361000", 6]
-    prod_case = ["漳州运营中心", "XMC", "361000", "XM", "361000", 1],["漳州运营中心", "XMC", "361000", "XM", "361000", 2],["漳州运营中心", "XMC", "361000", "XM", "361000", 3],["漳州运营中心", "XMC", "361000", "XM", "361000", 4],["漳州运营中心", "XMC", "361000", "XM", "361000", 5], ["漳州运营中心", "XMC", "361000", "XM", "361000", 6]
-
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
-    @unpack
-    def test_appoint(self, center, origin, ori_value, destination, des_value, index):
-        inter_orders = []
-        for order in globalvar.order_pool:
-            if order.order_type in [OrderType.CARPOOLING, OrderType.EXPRESS, OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
-                inter_orders.append(order)
-        order = inter_orders[index-1]
-        driver_id = self.filte_driver(order)
-        if driver_id == '没有合适的司机':
+    @data(OrderType.CARPOOLING, OrderType.EXPRESS, OrderType.CHARACTER)
+#    @unpack
+    def test_appoint(self, order_type):
+        order = utils.get_first_order(order_type)
+        driver = self.filter_driver(order)
+        if driver == '没有合适的司机':
             return 'N/A'
-        self.appoint_order(order.order_id, driver_id)
+        self.appoint_order(order.order_id, driver.driver_id)
         self.driver.find_element_by_css_selector('div.nav-right.td-opera > a[title="已派"]').click()
-        sleep(1)
-        appointed_orders = self.driver.find_elements_by_css_selector(
-                '#orderImmediately>table>tbody#tdy_driver_queue>tr')
+#        sleep(1)
+#        appointed_orders = self.driver.find_elements_by_css_selector(
+#                '#orderImmediately>table>tbody#tdy_driver_queue>tr')
+        appointed_orders = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#orderImmediately>table>tbody#tdy_driver_queue>tr')))
         id_list = [x.get_attribute('order-id') for x in appointed_orders]
         status = True if order.order_id in id_list else False
         self.assertTrue(status)
         order.order_status = OrderStatus.APPOINTED if status else OrderStatus.WAITING
 
-    @data({"driver_type": DriverType.CARPOOLING_DRIVER},{"driver_type": DriverType.CHARACTER_DRIVER},{"driver_type": DriverType.DAYSCHARACTER_DRIVER})
-    @unpack
-    @unittest.skip("直接跳过")
-    def test_depart(self, driver_type):
-#        self.input_center_line("物流中心", "XMC", "361000", "XM", "361000")
+    @data(OrderType.CARPOOLING, OrderType.EXPRESS, OrderType.FASTLINE)
+#    @unittest.skip("直接跳过")
+    def test_add_order(self, order_type):
+
+        order = utils.get_first_order(order_type)
+        driver = self.filter_driver(order)
+        appointed_user_count = driver.appoint_user_count
+        appointed_package_count = driver.appoint_package_count
+        self.driver.find_element_by_css_selector('#driverList').click()
+        self.driver.find_element_by_css_selector('#order-car-query').click()
+        self.select_driver(driver.driver_id)
+        WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
+            (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getDriverAddOrdersMergePage"]')))
+        if order_type in [OrderType.CARPOOLING, OrderType.CHARACTER, OrderType.EXPRESS, OrderType.DAYSCHARACTER]:
+            self.driver.find_element_by_xpath('//div[@class="order-ri-tit"]/ul/li[text()="补城际订单"]').click()
+            WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
+                (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getDriverAddOrdersPage"]')))
+            self.add_inter_order(order.order_id)
+
+        elif order_type in [OrderType.FASTLINE]:
+            self.driver.find_element_by_xpath('//div[@class="order-ri-tit"]/ul/li[text()="补快线订单"]').click()
+            WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
+                (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getDriverAddBusOrdersPage"]')))
+            self.driver.find_element_by_css_selector('div.fs-label-wrap>div.fs-label').click()
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.fs-options>div>div.fs-option-label')))
+            if argv[1] == 'HTTP1':
+                self.driver.execute_script(
+                    "$('div.fs-dropdown>div.fs-options>div>div.fs-option-label').filter(function(index){return $(this).text()=='高林SM专线';}).click()")
+            else:
+                self.driver.execute_script(
+                    "$('div.fs-dropdown>div.fs-options>div>div.fs-option-label').filter(function(index){return $(this).text()=='厦门测试班线';}).click()")
+            self.driver.find_element_by_css_selector('#btnQuery').click()
+            self.add_fastline_order(order.order_id)
+
+#        self.driver.execute_script('$("div#intercityDriver>table>tbody#tdy_driver_queue>tr").html("")')
+        sleep(1)
+#        self.driver.execute_script('$("#order-car-query").click()')
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr>td:nth-child(1)')))
+        dispach_status_css = utils.get_record_by_attr(self.driver, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr',
+                                                      'driver-id', driver.driver_id)
+        text = self.driver.find_element_by_css_selector(dispach_status_css + '>td:nth-child(7)').text
+        if order_type in [OrderType.CARPOOLING, OrderType.FASTLINE]:
+            result_appointed_count = int(re.search(r'(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+', text).group(2))
+            status = True if result_appointed_count == appointed_user_count else False
+        elif order_type in [OrderType.EXPRESS]:
+            result_package_count = int(re.search(r'(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+', text).group(3))
+            status = True if result_package_count == appointed_package_count else False
+        self.assertTrue(status)
+        order.order_status = OrderStatus.APPOINTED if status else OrderStatus.WAITING
+
+    @data(1, 2)
+#    @unittest.skip("直接跳过")
+    def test_depart(self, index):
+        depart_drivers = list(filter(lambda x: x.driver_type == DriverType.NET_DRIVER, globalvar.driver_pool))
         self.driver.find_element_by_css_selector('#driverList').click()
         self.driver.find_element_by_css_selector('div.bbx-orderlist-nav>.nav-right.td-opera>a[title="专车排班"]').click()
         WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'tbody#tdy_driver_queue>tr')))
-        depart_drivers = self.driver.find_elements_by_css_selector('tbody#tdy_driver_queue>tr')
-        driver_id_list = [x.get_attribute('driver-id') for x in depart_drivers]
-        for index, driver_id in enumerate(driver_id_list):
-            if globalvar.get_value(driver_type) == driver_id:
-                depart_css = 'tbody#tdy_driver_queue>tr:nth-child({})>td:nth-child(12)>a[name="driver-list-depart"]'.format(index+1)
-                self.driver.find_element_by_css_selector(depart_css).click()
-                self.driver.switch_to.default_content()
-                WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
-                self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, 'iframe[src="/orderCenterNew.do"]'))
-                sleep(1)
-                break
-            elif globalvar.get_value(driver_type) != driver_id and index == len(driver_id_list) - 1:
-                raise FoundRecordError(globalvar.get_value(driver_type), 'tbody#tdy_driver_queue>tr')
+        utils.select_operation_by_attr(self.driver, '#intercityDriver>table', '#intercityDriver>table>tbody>tr', 'driver-id', depart_drivers[index-1].driver_id, '发车')
+        self.driver.switch_to.default_content()
+        WebDriverWait(self.driver, 5).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0')))
+        self.driver.execute_script("""$('div[type="dialog"]>div>a.layui-layer-btn0').click()""")
+        self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, 'iframe[src="/orderCenterNew.do"]'))
+        sleep(1)
         self.driver.find_element_by_css_selector('div.nav-right.td-opera>a[title="已发车"]').click()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr')))
-        departed_drivers = self.driver.find_elements_by_css_selector('div#intercityDriver>table>tbody#tdy_driver_queue>tr')
+        departed_drivers = WebDriverWait(self.driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr')))
         id_list = [x.get_attribute('driver-id') for x in departed_drivers]
-        status = True if globalvar.get_value(driver_type) in id_list else False
+        status = True if depart_drivers[index-1].driver_id in id_list else False
         self.assertTrue(status)
-
-    @data({"driver_type": DriverType.CARPOOLING_DRIVER, "order_type": OrderType.CARPOOLING})
-    @unpack
-    @unittest.skip("直接跳过")
-    def test_add_order(self, driver_type, order_type):
-        self.input_center_line("物流中心", "XMC", "361000", "XM", "361000")
-        self.driver.find_element_by_css_selector('#driverList').click()
-        self.driver.find_element_by_css_selector('#order-car-query').click()
-        self.select_driver(globalvar.get_value(driver_type))
-        WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
-            (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getDriverAddOrdersMergePage"]')))
-        self.driver.find_element_by_xpath('//div[@class="order-ri-tit"]/ul/li[text()="补城际订单"]').click()
-        WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
-            (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getDriverAddOrdersPage"]')))
-        self.add_inter_order(globalvar.get_value(order_type))
-        self.driver.execute_script('$("div#intercityDriver>table>tbody#tdy_driver_queue>tr").html("")')
         sleep(1)
-        self.driver.execute_script('$("#order-car-query").click()')
-#        self.driver.find_element_by_css_selector('#order-car-query').click()
-        WebDriverWait(self.driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr>td')))
-        dispach_status_css = utils.get_record_by_attr(self.driver, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr', 'driver-id', globalvar.get_value(driver_type))
-        text = self.driver.find_element_by_css_selector(dispach_status_css + '>td:nth-child(7)').text
-        self.assertEqual(re.search(r'(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+', text).group(2), '2')

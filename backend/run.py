@@ -44,8 +44,8 @@ if __name__ == '__main__':
     suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDriverReport))
     suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))
     suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInterCenter))
-    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestOrderManage))
     suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightCenter))
+    suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestOrderManage))
     suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightOrderManage))
 
     suite_one.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))

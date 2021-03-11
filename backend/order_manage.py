@@ -13,7 +13,6 @@ import globalvar
 @ddt
 class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
 
-#    inter_orders = list(filter(lambda order: order.order_type in [OrderType.CARPOOLING, OrderType.CHARACTER, OrderType.EXPRESS, OrderType.DAYSCHARACTER], globalvar.order_pool))
     @classmethod
     def setUpClass(cls):
         cls.inter_orders = list(filter(
@@ -33,13 +32,8 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
         driver.switch_to.parent_frame()
 
     @data(1, 2, 3, 4, 5, 6)
-#    @unpack
-#    @file_data('.\\testcase\\order_manage.json')
-#    def test_complete_order(self, origin, ori_value, destination, des_value):
     def test_complete_order(self, index):
-#        utils.input_ori_des(self.driver, origin, ori_value, destination, des_value)
         self.driver.find_element_by_css_selector('#btnQuery').click()
-#        for order in globalvar.order_pool:
         order = self.inter_orders[index-1]
         css = utils.get_record_by_attr(self.driver, 'table#data_table>tbody>tr', 'order-list-id', order.order_id)
 
@@ -64,3 +58,9 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
             WebDriverWait(self.driver, 5).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, css_cancel))).click()
             utils.cancel_order(self.driver, '联系不上司机')
+            sleep(1)
+            css_assert = css + '>td:nth-child(17)'
+#            self.driver.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，同步最新的订单状态
+            text_str = WebDriverWait(self.driver, 15).until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, css_assert))).text
+            self.assertEqual(text_str, '客服取消')

@@ -1,4 +1,4 @@
-
+import utils
 
 class Order(object):
     def __init__(self, id_):
@@ -82,12 +82,13 @@ class Order(object):
 
 
 class Driver(object):
-    def __init__(self, id, max_user, max_package, car_type, oc_center):
+    def __init__(self, id, max_user, max_package, car_type, oc_center, driver_type=utils.DriverType.NET_DRIVER):
         self.__driver_id = id
         self.__max_user = max_user
         self.__max_package = max_package
         self.__car_type = car_type
         self.__oc_center = oc_center
+        self.__driver_type = driver_type
         self.__appoint_user_count = 0
         self.__appoint_package_count = 0
         self.__charter_count = 0
@@ -135,4 +136,12 @@ class Driver(object):
     @charter_count.setter
     def charter_count(self, count):
         self.__charter_count = count
+
+    @property
+    def driver_type(self):
+        return self.__driver_type
+
+    @driver_type.setter
+    def driver_type(self, _type):
+        self.__driver_type = _type
 

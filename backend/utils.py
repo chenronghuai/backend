@@ -2,6 +2,7 @@ import os
 import time
 from time import sleep
 import configparser
+import globalvar
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -40,6 +41,7 @@ class CarType(object):
 
 @unique
 class DriverType(Enum):
+    '''
     CARPOOLING_DRIVER = 1
     CHARACTER_DRIVER = 2
     EXPRESS_DRIVER = 3
@@ -47,6 +49,9 @@ class DriverType(Enum):
     DAYSCHARACTER_DRIVER = 5
     FASTLINE_DRIVER = 6
     HELPDRIVE_DRIVER = 7
+    '''
+    NET_DRIVER = 1
+    BUS_DRIVER = 2
 
 
 class FoundRecordError(Exception):
@@ -183,6 +188,12 @@ def switch_exist_frame(driver, from_src, to_src):
     $(window.parent.$("iframe[src='/""" + to_src + """']")).parent().addClass('on')""")
 
 
+def get_first_order(order_type):
+    for order in globalvar.order_pool:
+        if order.order_type == order_type and order.order_status == OrderStatus.WAITING:
+            return order
+
+
 def get_cell_content(driver, table_selector, row, column):
     """
     获取表格单元格数据
@@ -207,9 +218,9 @@ def get_record_by_attr(driver, locator, attr_name, value):
     :param locator: 元素的CSS locator
     :param attr_name: 字符串，属性的名称
     :param value: 字符串，属性的值
-    :return: 记录所在的行locator: *>table>tbody>tr:nth-child(*)
+    :return: 记录所在的行locator: *>table>tbody>tr:nth-child(n)
     """
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, locator)))
     records = driver.find_elements_by_css_selector(locator)
     for i in range(len(records)):
@@ -271,12 +282,22 @@ def select_operation_by_attr(driver, table_locator, attr_locator, attr_name, val
     :return:
     """
     record_locator = get_record_by_attr(driver, attr_locator, attr_name, value)
-    table_head_fields = driver.find_elements_by_css_selector(table_locator + '>thead>tr>th')
-    text_list = [x.text for x in table_head_fields]
+    try:
+        text_list = [x.text for x in WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
+    except:
+        sleep(1)
+        text_list = [x.text for x in WebDriverWait(driver, 5).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
     for index, text in enumerate(text_list):
         if "操作" in text:
             a_css = record_locator + '>td:nth-child({})'.format(index+1)
-            driver.find_element_by_css_selector(a_css).find_element_by_link_text(opera_text).click()
+            try:
+                WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(opera_text).click()
+            except:
+                sleep(1)
+                WebDriverWait(driver, 5).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(
+                    opera_text).click()
         elif "操作" not in text and index == len(text_list)-1:
             raise FoundRecordError("操作", table_locator)
 
@@ -324,11 +345,11 @@ def convert_to_minute(t):
 def input_ori_des(driver,  origin, ori_value, destination, des_value):
     try:
         we_ori = WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName')))
+        we_ori.clear()
         WebDriverWait(driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#startName-suggest>div')))
         driver.execute_script("$('div#endsName-suggest').html('')")
         we_ori.click()
-#        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest')))
         WebDriverWait(driver, 5).until(
             lambda x: x.execute_script("return $('#startName-suggest').css('display')") == 'block')
         we_ori.send_keys(origin)
@@ -339,10 +360,10 @@ def input_ori_des(driver,  origin, ori_value, destination, des_value):
 
     try:
         we_des = driver.find_element_by_css_selector('#endsName')
+        we_des.clear()
         WebDriverWait(driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
         we_des.click()
-#        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.ID, 'endsName-suggest')))
         WebDriverWait(driver, 5).until(
             lambda x: x.execute_script("return $('#endsName-suggest').css('display')") == 'block')
         we_des.send_keys(destination)

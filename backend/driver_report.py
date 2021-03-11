@@ -106,8 +106,8 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         css_record = 'tbody>tr:nth-child({})'.format(i)
         driver_id = self.driver.find_element_by_css_selector(css_record).get_attribute('data-uid')
         license_text = self.driver.find_element_by_css_selector(css_record+'>td:nth-child(11)').text
-        max_user = re.search(r'(\d+)\D+(\d+)\D+', license_text).group(1)
-        max_package = re.search(r'(\d+)\D+(\d+)\D+', license_text).group(2)
+        max_user = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(1))
+        max_package = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(2))
         car_type = self.driver.find_element_by_css_selector(css_record+'>td:nth-child(7)').text
         oc_center = self.driver.find_element_by_css_selector(css_record+'>td:nth-child(14)').text
         driver = Driver(driver_id, max_user, max_package, car_type, oc_center)
@@ -139,19 +139,21 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
-    @data((13345678965, "361000", "361000"), (17700000000, "361000", "361000"))
+    test_phone = [13328775856, "361000", "361000"],
+    prod_phone = [13345678965, "361000", "361000"],
+
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @data(*test_phone if argv[1] == 'HTTP1' else prod_phone)
     @unpack
-#    @unittest.skip("直接跳过")
-#    @file_data('.\\testcase\\driver_report_phone.json' if argv[1] == 'HTTP1' else '.\\testcase\\driver_report_p.json')
     def test_driver_report_by_phone(self, phone, ori_val, des_val):
         report_status = self.driver_report_by_phone(phone, ori_val, des_val)
         self.assertEqual(report_status, '报班')
 
-#    @data({"carnum":"闽C57D12","phone":"13345678965", "ori_val": "361000", "des_val": "361000"},
-#          {"carnum":"闽D22345","phone":"13565498721", "ori_val": "361000", "des_val": "361000"})
+    test_car = ["闽C57D12", "13345678965", "361000", "361000"],
+    prod_car = ["闽D888888", "17700000000", "361000", "361000"],
     @unpack
-    @unittest.skip("直接跳过")
-    @file_data('.\\testcase\\driver_report_carnum.json')
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @data(*test_car if argv[1] == 'HTTP1' else prod_car)
     def test_driver_report_by_carnum(self, carnum, phone, ori_val, des_val):
         report_status = self.driver_report_by_carnum(carnum, phone, ori_val, des_val)
         self.assertEqual(report_status, '报班')
