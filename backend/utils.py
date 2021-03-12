@@ -220,13 +220,16 @@ def get_record_by_attr(driver, locator, attr_name, value):
     :param value: 字符串，属性的值
     :return: 记录所在的行locator: *>table>tbody>tr:nth-child(n)
     """
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, locator)))
-    records = driver.find_elements_by_css_selector(locator)
+    records = WebDriverWait(driver, 10).until(
+        EC.presence_of_all_elements_located((By.CSS_SELECTOR, locator)))
+#    records = driver.find_elements_by_css_selector(locator)
     for i in range(len(records)):
-        if records[i].get_attribute(attr_name) == value:
+        # 下面多加一个同步，尽可能规避DOM为空的情形
+        actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
+#        actual_value = records[i].get_attribute(attr_name)
+        if actual_value == value:
             return locator + ':nth-child({})'.format(i + 1)
-        elif records[i].get_attribute(attr_name) != value and i == len(records) - 1:
+        elif actual_value != value and i == len(records) - 1:
             raise FoundRecordError(value, locator)
 
 

@@ -69,9 +69,7 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
             WebDriverWait(self.driver, 15).until(
                 EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0')))
             self.driver.switch_to.frame(we_manage)
-#            self.driver.execute_script("$('table#data_table>tbody>tr').html('')")
-#            self.driver.find_element_by_css_selector('#btnQuery').click()
-            sleep(1)
+            self.driver.execute_script("$('table#data_table>tbody>tr').html('')")
             status_css = temp_css + '>td:nth-child(11)'
             actual_text = WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, status_css))).text
@@ -84,7 +82,8 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
             WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, cancel_css))).click()
             utils.cancel_order(self.driver, '车辆故障')
             sleep(1)
+#            self.driver.execute_script("$('table#data_table>tbody>tr').html('')")
             status_css = temp_css + '>td:nth-child(11)'
-            actual_text = WebDriverWait(self.driver, 5).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, status_css))).text
+            actual_text = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, status_css))).text
             self.assertEqual(actual_text, '客服取消')

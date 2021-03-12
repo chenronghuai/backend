@@ -539,6 +539,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
                 count = 1
             sleep(0.5)
         if flow == 'T':
+            WebDriverWait(self.driver, 10).until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, '#availableSeats'), "当前余票"))
             self.driver.find_element_by_css_selector('#flightsAll').click()
             flight_no = globalvar.get_value('FlightNo')
             WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, f'#flightsAll-suggest>div[flights_no="{flight_no}"]'))).click()

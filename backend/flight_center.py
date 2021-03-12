@@ -33,30 +33,30 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         self.driver.execute_script("""
             $('.fs-options>div').each(function(inx, obj){if($(this).hasClass('selected')){$(this).removeClass('selected');}});
            """)
-        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+        WebDriverWait(self.driver, 15).until(EC.presence_of_element_located(
             (By.XPATH, '//div[@class="fs-options"]/div[@class="fs-option"]/div[text()="' + line + '"]'))).click()
         self.driver.find_element_by_css_selector('#ipt_line_query').click()
 
     def new_flight_driver(self, center, line, driver_team, driver_phone):
         try:
             self.driver.find_element_by_css_selector('#selCenter').click()
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
             self.driver.find_element_by_css_selector('#selLine').click()
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname$="' + line + '"]'))).click()
 
             self.driver.find_element_by_css_selector('#flightsDate').click()
             WebDriverWait(self.driver, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '.laydate-btns-confirm'))).click()
             self.driver.find_element_by_css_selector('#selFlights').click()
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selFlights-suggest>div[dataname="' + globalvar.get_value('FlightNo') + '"]'))).click()
             self.driver.find_element_by_css_selector('#chooseDriver').click()
             WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
                 (By.CSS_SELECTOR, '[src^="/flightsOrderCenter.do?method=toChooseFlightsDriver"]')))
-            self.driver.find_element_by_css_selector('#selMotorcade').click()
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#selMotorcade'))).click()
+            WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selMotorcade-suggest>div[dataname$="' + driver_team + '"]'))).click()
             self.driver.find_element_by_css_selector('#phone1').send_keys(driver_phone)
             self.driver.find_element_by_css_selector('#btnQuery').click()
@@ -122,7 +122,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         sleep(3)
 
     test_case_report = ["漳州运营中心", "高林SM专线", "老王测试专用车队", "13345678972"],
-    prod_case_report = ["漳州运营中心", "厦门测试专线", "帮邦行厦门公司", "17700000001"],
+    prod_case_report = ["漳州运营中心", "厦门测试班线", "禁用", "16666666666"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(*test_case_report if argv[1] == 'HTTP1' else prod_case_report)

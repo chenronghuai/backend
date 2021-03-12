@@ -49,6 +49,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         cls.driver.find_element_by_css_selector('div#ipt_line_query').click()
 
     def appoint_order(self, order_id, driver_id):
+        driver_css = ''
         self.driver.find_element_by_css_selector('#orderList').click()
         sleep(0.5)
         self.driver.find_element_by_css_selector('div.nav-right.td-opera > a[title="即时"]').click()
@@ -61,11 +62,16 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
             EC.presence_of_element_located((By.CSS_SELECTOR, order_css))).click()
         WebDriverWait(self.driver, 5).until(
             EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/orderCtrl.do"]')))
+        records = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercity-lists>tr>td:nth-child(1)>input')))
+        for i in range(1, len(records)+1):
+            actual_value = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, f'#intercity-lists>tr:nth-child({i})>td:nth-child(1)>input'))).get_attribute(
+                'driver_id')
+            if driver_id == actual_value:
+                driver_css = f'#intercity-lists>tr:nth-child({i})' + '>td:nth-child(1)'
+                break
 
-        temp_css = utils.get_record_by_attr(self.driver, '#intercity-lists>tr>td:nth-child(1)>input', 'driver_id', driver_id)
-        s1 = temp_css[:19]  # 由于司机ID信息存在于input,不同于常规的tr，需做特殊处理
-        s2 = temp_css[41:]
-        driver_css = s1 + s2 + '>td:nth-child(1)'
         self.driver.find_element_by_css_selector(driver_css).click()
         sleep(1)
         self.driver.find_element_by_css_selector('#todoSaveBtn').click()
@@ -261,9 +267,14 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, 'iframe[src="/orderCenterNew.do"]'))
         sleep(1)
         self.driver.find_element_by_css_selector('div.nav-right.td-opera>a[title="已发车"]').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr')))
+        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr')))  # 多余
         departed_drivers = WebDriverWait(self.driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr')))
-        id_list = [x.get_attribute('driver-id') for x in departed_drivers]
+        # try模块为了规避系统刷新时DOM为空导致的异常
+        try:
+            id_list = [x.get_attribute('driver-id') for x in departed_drivers]
+        except:
+            sleep(1)
+            id_list = [x.get_attribute('driver-id') for x in departed_drivers]
         status = True if depart_drivers[index-1].driver_id in id_list else False
         self.assertTrue(status)
         sleep(1)
