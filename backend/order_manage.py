@@ -21,6 +21,7 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '订单管理', 'orderManage.do')
         utils.input_ori_des(cls.driver, "XMC", "361000", "XM", "361000")
+        WebDriverWait(cls.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
 
     def operate_dialog(self, driver, button_css_locator, iframe_src, operator_css_locator):
         WebDriverWait(driver, 15).until(
@@ -33,7 +34,7 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
 
     @data(1, 2, 3, 4, 5, 6)
     def test_complete_order(self, index):
-        self.driver.find_element_by_css_selector('#btnQuery').click()
+#        self.driver.find_element_by_css_selector('#btnQuery').click()
         order = self.inter_orders[index-1]
         css = utils.get_record_by_attr(self.driver, 'table#data_table>tbody>tr', 'order-list-id', order.order_id)
 

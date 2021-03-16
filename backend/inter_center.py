@@ -27,7 +27,6 @@ def get_commit_order():
 
 @ddt
 class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
-
     @classmethod
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
@@ -258,7 +257,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         depart_drivers = list(filter(lambda x: x.driver_type == DriverType.NET_DRIVER, globalvar.driver_pool))
         self.driver.find_element_by_css_selector('#driverList').click()
         self.driver.find_element_by_css_selector('div.bbx-orderlist-nav>.nav-right.td-opera>a[title="专车排班"]').click()
-        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'tbody#tdy_driver_queue>tr')))
+        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody#tdy_driver_queue>tr')))
         utils.select_operation_by_attr(self.driver, '#intercityDriver>table', '#intercityDriver>table>tbody>tr', 'driver-id', depart_drivers[index-1].driver_id, '发车')
         self.driver.switch_to.default_content()
         WebDriverWait(self.driver, 5).until(
@@ -267,7 +266,6 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, 'iframe[src="/orderCenterNew.do"]'))
         sleep(1)
         self.driver.find_element_by_css_selector('div.nav-right.td-opera>a[title="已发车"]').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr')))  # 多余
         departed_drivers = WebDriverWait(self.driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#intercityDriver>table>tbody#tdy_driver_queue>tr')))
         # try模块为了规避系统刷新时DOM为空导致的异常
         try:

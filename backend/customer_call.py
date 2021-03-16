@@ -82,17 +82,19 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#startName-suggest>div')))
         self.driver.find_element(By.CSS_SELECTOR, '#startName').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest')))
+        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div')))
         self.driver.find_element(By.CSS_SELECTOR, '#startName').send_keys(origin_region_index)
         if len(self.driver.find_elements_by_css_selector('#startName-suggest>div')) > 1:
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
                 '//*[@id="startName-suggest"]/div[@text="' + origin_region + '"]')), '起始方位无法获取').click()
-        self.driver.execute_script("$('#endsName-suggest').html('')")
+#        self.driver.execute_script("$('#endsName-suggest').html('')")
         sleep(0.5)
         we_ori_addr = self.driver.find_element_by_css_selector('#startAddr')
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal')))
         we_ori_addr.click()
         WebDriverWait(self.driver, 5).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
+            EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
         we_ori_addr.send_keys(origin_addr)
         WebDriverWait(self.driver, 10).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点POI无法获取').click()  # 此行代码偶发超时异常，增加时间试试效果
@@ -108,19 +110,22 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         :param des_addr: 终点地址
         :return:
         """
-        WebDriverWait(self.driver, 20).until(
+        WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
-        self.driver.find_element_by_css_selector('#endsName').click()
+        self.driver.find_element(By.CSS_SELECTOR, '#endsName').click()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#endsName-suggest>div')))
         WebDriverWait(self.driver, 5).until(
             lambda x: x.execute_script("return $('#endsName-suggest').css('display')") == 'block')
-        self.driver.find_element_by_css_selector('#endsName').send_keys(des_region_index)
+        self.driver.find_element(By.CSS_SELECTOR, '#endsName').send_keys(des_region_index)
+        sleep(0.5)
         WebDriverWait(self.driver, 10).until_not(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点信息还没消失')
         we_des_addr = self.driver.find_element_by_css_selector('#endAddr')
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal')))
         we_des_addr.click()
         WebDriverWait(self.driver, 5).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
+            EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         we_des_addr.send_keys(des_addr)
         WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
             '#end-lists-penal>li:nth-child(1)')), '终点POI无法获取').click()

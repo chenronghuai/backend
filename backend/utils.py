@@ -7,6 +7,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from enum import Enum, unique
+from selenium.common.exceptions import StaleElementReferenceException
+import logging
 
 
 class OrderType(object):
@@ -222,15 +224,21 @@ def get_record_by_attr(driver, locator, attr_name, value):
     """
     records = WebDriverWait(driver, 10).until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, locator)))
-#    records = driver.find_elements_by_css_selector(locator)
-    for i in range(len(records)):
-        # 下面多加一个同步，尽可能规避DOM为空的情形
-        actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
-#        actual_value = records[i].get_attribute(attr_name)
-        if actual_value == value:
-            return locator + ':nth-child({})'.format(i + 1)
-        elif actual_value != value and i == len(records) - 1:
-            raise FoundRecordError(value, locator)
+    if len(records) > 0:
+        for i in range(len(records)):
+            # 下面try模块的目的，为了规避DOM为空的情形
+            try:
+                actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
+            except StaleElementReferenceException:
+                actual_value = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
+                    attr_name)
+            if actual_value == value:
+                return locator + ':nth-child({})'.format(i + 1)
+            elif actual_value != value and i == len(records) - 1:
+                raise FoundRecordError(value, locator)
+    else:
+        raise FoundDriverError('该定位下没有找到任何记录', locator)
 
 
 def get_record_by_field_value(driver, locator, td_val, value):

@@ -182,7 +182,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         else:
             self.input_center_line('漳州运营中心', '厦门测试班线')
         driver_css = fast_line.search_extract_driver(driver_, self.driver)  # 不可直接使用filter_bus_driver得到的司机，因为同一个司机不同班次并存于列表
-        pre_add_count = int(self.driver.find_element_by_css_selector(driver_css + '>td:nth-child(9)').text)
+        pre_add_count = int(WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
         if order_type in [OrderType.FASTLINE]:
             self.driver.find_element_by_css_selector(
                 driver_css + '>td:nth-child(11)>a[name="btnRepairOrderKb"]').click()

@@ -7,6 +7,7 @@ from PIL import ImageEnhance, ImageGrab
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import globalvar
 
 
 def login(url_section, user_section):
@@ -16,6 +17,7 @@ def login(url_section, user_section):
     :return: driver
     """
     driver = webdriver.Chrome()
+    globalvar.set_value('driver', driver)
     driver.get(utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl'))
     driver.maximize_window()
     driver.find_element_by_id('username').send_keys(utils.read_config_value(user_section, 'username'))
@@ -25,8 +27,8 @@ def login(url_section, user_section):
     offset_height = driver.execute_script('return window.outerHeight-window.innerHeight')  # 识别码图片在窗口Y方向偏移量
     # 以下为登录验证码自动识别
     while True:
-        driver.find_element_by_id('imgCode').clear()
-        code_ele = driver.find_element_by_xpath('//*[@id="changeImg"]')   # 此处出现几率很低的找不到，实际已经计算识别正确，循环时序待查
+        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#imgCode'))).clear()
+        code_ele = WebDriverWait(driver, 10).until((EC.visibility_of_element_located((By.CSS_SELECTOR, '#changeImg'))))
         left = code_ele.location['x']
         top = code_ele.location['y'] + offset_height
         right = left + code_ele.size['width']
@@ -37,8 +39,8 @@ def login(url_section, user_section):
         sharp_img = sharpness.enhance(2.0)
         str = image_to_string(sharp_img, lang='817')  # 调用名字为817.traineddata的训练数据识别验证码
         value = utils.cal_val(str)
-        driver.find_element_by_id('imgCode').send_keys(value)
-        driver.find_element_by_id('loginBtn').click()
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#imgCode'))).send_keys(value)
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#loginBtn'))).click()
         sleep(0.5)
         try:
             text_tip = driver.find_element_by_id('error-msg').text
@@ -62,7 +64,6 @@ def login(url_section, user_section):
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="layui-layer layui-layer-page  layer-anim"]>span.layui-layer-setwin>a'))).click()
     except:
         pass
-
     return driver
 
 
