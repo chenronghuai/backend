@@ -44,7 +44,7 @@ if __name__ == '__main__':
         file_path = os.path.abspath(
             os.path.join(utils.get_path(), os.path.pardir)) + "//testreport//" + now_time + "_result.html"
         file_result = open(file_path, 'wb')
-        runner = HTMLTestRunner.HTMLTestRunner(file_result, 2, u"业务后台测试报告", u"执行概况")
+        runner = HTMLTestRunner.HTMLTestRunner(file_result, 2, u"业务后台自动化测试报告", u"执行概况")
 
         action_login()
 

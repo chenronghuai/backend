@@ -26,9 +26,13 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         utils.switch_frame(cls.driver,  '班线管理', '班次调度中心', 'flightsOrderCenter.do')
 
     def input_center_line(self, center, line):
+        WebDriverWait(self.driver, 20).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selCenter-suggest>div')))
         self.driver.execute_script("$('#selCenter').click()")
         WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
+        WebDriverWait(self.driver, 20).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.fs-dropdown>.fs-options>.fs-option>.fs-option-label')))
         self.driver.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
         self.driver.execute_script("""
             $('.fs-options>div').each(function(inx, obj){if($(this).hasClass('selected')){$(this).removeClass('selected');}});
@@ -39,9 +43,12 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
 
     def new_flight_driver(self, center, line, driver_team, driver_phone):
         try:
+            WebDriverWait(self.driver, 20).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selCenter-suggest>div')))
             self.driver.find_element_by_css_selector('#selCenter').click()
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selLine-suggest>div')))
             self.driver.find_element_by_css_selector('#selLine').click()
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname$="' + line + '"]'))).click()
@@ -55,6 +62,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             self.driver.find_element_by_css_selector('#chooseDriver').click()
             WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
                 (By.CSS_SELECTOR, '[src^="/flightsOrderCenter.do?method=toChooseFlightsDriver"]')))
+            WebDriverWait(self.driver, 20).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selMotorcade-suggest>div')))
             WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#selMotorcade'))).click()
             WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selMotorcade-suggest>div[dataname$="' + driver_team + '"]'))).click()

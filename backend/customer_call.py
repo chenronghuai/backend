@@ -14,6 +14,7 @@ import logging
 from sys import argv
 from common import Order
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import StaleElementReferenceException
 
 
 logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -318,8 +319,12 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         :param str_filter: 订单类型
         :return: 客户来电页订单所在行数，匹配不到返回0
         """
-#        self.driver.find_element_by_css_selector('#call-see-order').click()
-        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#call-see-order'))).click()
+        try:
+            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#call-see-order'))).click()
+        except StaleElementReferenceException:
+            sleep(0.5)
+            WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#call-see-order'))).click()
         sleep(1)
         b_match = False
         for i in range(1, len(self.driver.find_elements_by_css_selector('#callOrderPage>table>tbody>tr'))+1):
@@ -544,7 +549,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
                 count = 1
             sleep(0.5)
         if flow == 'T':
-            WebDriverWait(self.driver, 10).until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, '#availableSeats'), "当前余票"))
+            WebDriverWait(self.driver, 20).until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, '#availableSeats'), "当前余票"))
             self.driver.find_element_by_css_selector('#flightsAll').click()
             flight_no = globalvar.get_value('FlightNo')
             WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, f'#flightsAll-suggest>div[flights_no="{flight_no}"]'))).click()
