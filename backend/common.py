@@ -1,7 +1,8 @@
 import utils
 
+
 class Order(object):
-    def __init__(self, id_):
+    def __init__(self, id_, ):
         self.__order_id = id_
 
     @property

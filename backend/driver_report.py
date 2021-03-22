@@ -128,6 +128,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
             return '找不到司机'
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(15)>a:nth-child(2)').click()
+        driver_id = self.driver.find_element_by_css_selector('tbody>tr').get_attribute('data-uid')
         self.driver.switch_to.parent_frame()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn- > a.layui-layer-btn0'))).click()
@@ -137,10 +138,12 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+        cancel_driver = globalvar.get_driver(driver_id)
+        globalvar.del_driver(cancel_driver)
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
-    test_phone = [13328775856, "361000", "361000"],
-    prod_phone = [13345678965, "361000", "361000"],
+    test_phone = [13328775856, "361000", "361000"], [13565498722, "361000", "361000"]
+    prod_phone = [13345678965, "361000", "361000"], [18030142505, "361000", "361000"]
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(*test_phone if argv[1] == 'HTTP1' else prod_phone)
@@ -151,6 +154,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
 
     test_car = ["闽C57D12", "13345678965", "361000", "361000"],
     prod_car = ["闽D888888", "17700000000", "361000", "361000"],
+
     @unpack
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(*test_car if argv[1] == 'HTTP1' else prod_car)
@@ -158,10 +162,10 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         report_status = self.driver_report_by_carnum(carnum, phone, ori_val, des_val)
         self.assertEqual(report_status, '报班')
 
-    @data({"phone": "17700000000"}, {"phone": "13345678965"})
-    @unpack
-    @unittest.skip("直接跳过")
-#    @file_data('.\\testcase\\driver_report_phone.json')
+    test_driver = (13565498722,)
+    prod_driver = (18030142505,)
+
+    @data(*test_driver if argv[1] == 'HTTP1' else prod_driver)
     def test_driver_cancel_report(self, phone):
         report_status = self.driver_cancel_report(phone)
         self.assertEqual(report_status, '未报班')

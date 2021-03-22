@@ -14,7 +14,7 @@ import logging
 from sys import argv
 from common import Order
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
 
 logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -93,12 +93,23 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         we_ori_addr = self.driver.find_element_by_css_selector('#startAddr')
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal')))
-        we_ori_addr.click()
-        WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
-        we_ori_addr.send_keys(origin_addr)
-        WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点POI无法获取').click()  # 此行代码偶发超时异常，增加时间试试效果
+        try:
+            we_ori_addr.click()
+            WebDriverWait(self.driver, 5).until(
+                EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
+        except TimeoutException:
+            we_ori_addr.click()
+            WebDriverWait(self.driver, 5).until(
+                EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
+        try:
+            we_ori_addr.send_keys(origin_addr)
+            WebDriverWait(self.driver, 5).until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点POI无法获取').click()  # 此行代码偶发超时异常，增加时间试试效果
+        except TimeoutException:
+            we_ori_addr.send_keys(origin_addr)
+            WebDriverWait(self.driver, 5).until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')),
+                '起点POI无法获取').click()
         WebDriverWait(self.driver, 5).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')))
         sleep(0.5)
@@ -124,9 +135,14 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         we_des_addr = self.driver.find_element_by_css_selector('#endAddr')
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal')))
-        we_des_addr.click()
-        WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
+        try:
+            we_des_addr.click()
+            WebDriverWait(self.driver, 5).until(
+                EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
+        except TimeoutException:
+            we_des_addr.click()
+            WebDriverWait(self.driver, 5).until(
+                EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         we_des_addr.send_keys(des_addr)
         WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
             '#end-lists-penal>li:nth-child(1)')), '终点POI无法获取').click()

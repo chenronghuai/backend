@@ -113,7 +113,8 @@ def add_bus_order(driver, order_id):
 def filter_bus_driver(order):
     bus_drivers = list(filter(lambda _driver: _driver.driver_type == DriverType.BUS_DRIVER, globalvar.driver_pool))
     if len(bus_drivers) == 0:
-        raise ValueError('司机池找不到班线司机！')
+        raise IndexError
+        return '司机池找不到班线司机！'
     if order.order_type in [OrderType.CARPOOLING, OrderType.FASTLINE]:
         for index, driver in enumerate(bus_drivers):
             if order.order_count <= driver.max_user-driver.appoint_user_count and driver.charter_count == 0:
@@ -121,11 +122,13 @@ def filter_bus_driver(order):
                 return driver
             elif index == len(bus_drivers)-1:
                 raise FoundDriverError(order.order_type)
+                raise IndexError
                 return '没有合适的司机'
 
     elif order.order_type in [OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
         free_drivers = list(filter(lambda x: x.charter_count == 0 and x.appoint_user_count == 0, bus_drivers))
         if len(free_drivers) == 0:
+            raise IndexError
             return '没有合适的司机'
         else:
             for index, driver in enumerate(free_drivers):
@@ -134,6 +137,7 @@ def filter_bus_driver(order):
                     return driver
                 elif index == len(free_drivers) - 1:
                     raise FoundDriverError(order.order_type)
+                    raise IndexError
                     return '没有合适的司机'
 
 

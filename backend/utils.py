@@ -191,9 +191,11 @@ def switch_exist_frame(driver, from_src, to_src):
 
 
 def get_first_order(order_type):
-    for order in globalvar.order_pool:
+    for index, order in enumerate(globalvar.order_pool):
         if order.order_type == order_type and order.order_status == OrderStatus.WAITING:
             return order
+        elif index == len(globalvar.order_pool)-1:
+            raise IndexError
 
 
 def get_cell_content(driver, table_selector, row, column):
@@ -310,7 +312,7 @@ def select_operation_by_attr(driver, table_locator, attr_locator, attr_name, val
                     EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(
                     opera_text).click()
         elif "操作" not in text and index == len(text_list)-1:
-            raise FoundRecordError("操作", table_locator)
+            raise IndexError  # FoundRecordError("操作", table_locator)
 
 
 def get_time(date, t_time):

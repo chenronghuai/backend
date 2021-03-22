@@ -29,10 +29,18 @@ def add_order(order):
     order_pool.append(order)
 
 
+def del_order(order):
+    try:
+        global order_pool
+        order_pool.remove(order)
+    except ValueError:
+        raise IndexError
+
+
 def get_order(id_):
     global order_pool
     for order in order_pool:
-        if id_ == order.__order_id:
+        if id_ == order.order_id:
             return order
 
 
@@ -41,10 +49,18 @@ def add_driver(driver):
     driver_pool.append(driver)
 
 
+def del_driver(driver):
+    try:
+        global driver_pool
+        driver_pool.remove(driver)
+    except ValueError:
+        raise IndexError
+
+
 def get_driver(id_):
     global driver_pool
     for driver in driver_pool:
-        if id_ == driver.__driver_id:
+        if id_ == driver.driver_id:
             return driver
 
 

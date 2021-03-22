@@ -156,7 +156,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                     driver.appoint_user_count += order.order_count
                     return driver
                 elif index == len(net_drivers)-1:
-                    raise FoundDriverError(order.order_type)
+                    raise IndexError  # FoundDriverError(order.order_type)
                     return '没有合适的司机'
 
         elif order.order_type == OrderType.EXPRESS:
@@ -165,12 +165,13 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                     driver.appoint_package_count += order.order_count
                     return driver
                 elif index == len(net_drivers)-1:
-                    raise FoundDriverError(order.order_type)
+                    raise IndexError  # FoundDriverError(order.order_type)
                     return '没有合适的司机'
 
         elif order.order_type in [OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
             free_drivers = list(filter(lambda x: x.charter_count == 0 and x.appoint_user_count == 0, net_drivers))
             if len(free_drivers) == 0:
+                raise IndexError
                 return '没有合适的司机'
             else:
                 for index, driver in enumerate(free_drivers):
@@ -178,7 +179,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                         driver.charter_count += 1
                         return driver
                     elif index == len(free_drivers) - 1:
-                        raise FoundDriverError(order.order_type)
+                        raise IndexError  # FoundDriverError(order.order_type)
                         return '没有合适的司机'
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
