@@ -8,11 +8,7 @@ import utils
 from utils import OrderType, OrderStatus
 from utils import TestMeta
 import globalvar
-import logging
 from sys import argv
-
-
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 init_flag = True
@@ -26,6 +22,7 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
         cls.fastline_orders = list(filter(lambda x: x.order_type == OrderType.FASTLINE, globalvar.order_pool))
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '班线管理', '班线订单管理', 'flightsOrderManager.do')
+        globalvar.opened_window_pool.append('flightsOrderManager.do')
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(1, 2, 3)

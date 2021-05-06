@@ -4,6 +4,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from time import sleep, strftime
 from sys import argv
+import log
 import datetime
 from selenium import webdriver
 from ddt import ddt, data, file_data, unpack
@@ -12,9 +13,6 @@ from utils import DriverType
 import globalvar
 import re
 from common import Driver
-import logging
-
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 @ddt
@@ -26,6 +24,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '司机报班', 'driverReport.do')
+        globalvar.opened_window_pool.append('driverReport.do')
 
     @classmethod
     def tearDownClass(cls):
@@ -55,7 +54,8 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         try:
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody>tr')))
         except:
-            return '找不到司机'
+            log.logger.error(f'列表找不到司机：{phone}')
+            return None
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(
             (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]')))
@@ -88,7 +88,8 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
                 EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr'))
             )
         except:
-            return '找不到该车牌关联的任何司机'
+            log.logger.error(f'找不到该车牌{carnum}关联的任何司机')
+            return None
         records = self.driver.find_elements_by_css_selector('table#data_table>tbody>tr')
         for i in range(1, len(records)+1):
             css = '#data_table>tbody>tr:nth-child(%s)>td:nth-child(5)' % i
@@ -142,7 +143,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         globalvar.del_driver(cancel_driver)
         return self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
-    test_phone = [13328775856, "361000", "361000"], [13565498722, "361000", "361000"]
+    test_phone = [13328775856, "361000", "361000"], [13565498722, "361000", "361000"], [13345678968, "361000", "361000"]
     prod_phone = [13345678965, "361000", "361000"], [18030142505, "361000", "361000"]
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')

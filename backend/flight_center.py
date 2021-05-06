@@ -2,6 +2,7 @@ import unittest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from time import sleep
 from ddt import ddt, data, unpack
 import utils
@@ -9,12 +10,8 @@ import fast_line
 from utils import OrderType, DriverType, OrderStatus, FoundDriverError
 from utils import TestMeta
 import globalvar
-import logging
 from common import Driver
 from sys import argv
-
-
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 @ddt
@@ -24,6 +21,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver,  '班线管理', '班次调度中心', 'flightsOrderCenter.do')
+        globalvar.opened_window_pool.append('flightsOrderCenter.do')
 
     def input_center_line(self, center, line):
         WebDriverWait(self.driver, 20).until(
@@ -59,12 +57,15 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             self.driver.find_element_by_css_selector('#selFlights').click()
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selFlights-suggest>div[dataname="' + globalvar.get_value('FlightNo') + '"]'))).click()
+#            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
+#                (By.CSS_SELECTOR,
+#                 'div#selFlights-suggest>div[dataname="CS008"]'))).click()
             self.driver.find_element_by_css_selector('#chooseDriver').click()
             WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
                 (By.CSS_SELECTOR, '[src^="/flightsOrderCenter.do?method=toChooseFlightsDriver"]')))
-            WebDriverWait(self.driver, 20).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selMotorcade-suggest>div')))
-            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#selMotorcade'))).click()
-            WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(
+            WebDriverWait(self.driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selMotorcade-suggest>div')))
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#selMotorcade'))).click()
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selMotorcade-suggest>div[dataname$="' + driver_team + '"]'))).click()
             self.driver.find_element_by_css_selector('#phone1').send_keys(driver_phone)
             self.driver.find_element_by_css_selector('#btnQuery').click()
@@ -136,6 +137,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
     @data(*test_case_report if argv[1] == 'HTTP1' else prod_case_report)
     @unpack
     def test_flight_driver_report(self, center, line, driver_team, driver_phone):
+
         self.input_center_line(center, line)
         self.driver.find_element_by_css_selector('#driverList').click()
         sleep(0.5)

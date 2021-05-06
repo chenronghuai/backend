@@ -2,13 +2,14 @@ import os
 import time
 from time import sleep
 import configparser
+import random
 import globalvar
+import log
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from enum import Enum, unique
 from selenium.common.exceptions import StaleElementReferenceException
-import logging
 
 
 class OrderType(object):
@@ -111,10 +112,20 @@ def read_config_value(section, name):
     path = os.path.abspath(os.path.join(get_path(), os.path.pardir))
     config_path = os.path.join(path, 'config.ini')
     config = configparser.ConfigParser()
+#    config.read(config_path, encoding='utf-8')
     config.read(config_path, encoding='utf-8')
     value = config.get(section, name)
     return value
 
+
+def modify_config_value(section, name, value):
+    """修改配置文件config.ini元素的值"""
+    path = os.path.abspath(os.path.join(get_path(), os.path.pardir))
+    config_path = os.path.join(path, 'config.ini')
+    config = configparser.ConfigParser()
+    config.read(config_path, encoding='utf-8')
+    config.set(section, name, value)
+    config.write(open(config_path, 'w'))
 
 def get_path():
     """获取项目所在路径"""
@@ -173,7 +184,7 @@ def switch_frame(driver, mother_menu, child_menu, frame_name):
     $(openTitle).siblings("i").removeClass("open");""")
     sleep(1)
     driver.execute_script("$('.side-tit').filter(function(index){return $(this).text().indexOf('" + mother_menu +
-                          "')>0;}).click()")
+                          "')>=0;}).click()")
     sleep(1)
     we_childmenu = driver.find_element_by_css_selector('[tit=' + child_menu + ']')
     we_childmenu.location_once_scrolled_into_view
@@ -183,11 +194,13 @@ def switch_frame(driver, mother_menu, child_menu, frame_name):
     sleep(2)  # 预留时间加载js
 
 
-def switch_exist_frame(driver, from_src, to_src):
+def switch_exist_frame(driver, to_src, title):
     driver.switch_to.default_content()
     driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, 'iframe[src="/' + to_src + '"]'))
-    driver.execute_script("""$(window.parent.$("iframe[src='/""" + from_src + """']")).parent().removeClass('on');
-    $(window.parent.$("iframe[src='/""" + to_src + """']")).parent().addClass('on')""")
+    driver.execute_script(
+        "$(window.parent.$('.tab-tit>li').filter(function(index){return $(this).text().indexOf('" + title + "')>=0;})).click()")
+#    driver.execute_script("""$(window.parent.$("iframe[src='/""" + from_src + """']")).parent().removeClass('on');
+#    $(window.parent.$("iframe[src='/""" + to_src + """']")).parent().addClass('on')""")
 
 
 def get_first_order(order_type):
@@ -232,14 +245,17 @@ def get_record_by_attr(driver, locator, attr_name, value):
             try:
                 actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
             except StaleElementReferenceException:
+                sleep(1)
                 actual_value = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
                     attr_name)
             if actual_value == value:
                 return locator + ':nth-child({})'.format(i + 1)
             elif actual_value != value and i == len(records) - 1:
+                log.logger.info(f'订单列表里找不到{attr_name}={value}的订单')
                 raise FoundRecordError(value, locator)
     else:
+        log.logger.warning(f'该定位下({locator})没有找到任何记录')
         raise FoundDriverError('该定位下没有找到任何记录', locator)
 
 
@@ -255,18 +271,48 @@ def get_record_by_field_value(driver, locator, td_val, value):
     WebDriverWait(driver, 5).until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, locator)))
     tds = driver.find_elements_by_css_selector(locator + '>thead>tr>th')
-    for index, val in enumerate(tds):
+    for index, val in enumerate(tds, 1):
         if val.text == td_val:
-            td_index = index + 1
             records = driver.find_elements_by_css_selector(locator + '>tbody>tr')
             for i in range(len(records)):
-                css_td = 'td:nth-child({})'.format(td_index)
+                css_td = 'td:nth-child({})'.format(index)
                 if records[i].find_element_by_css_selector(css_td).text == value:
                     return locator + '>tbody>tr:nth-child({})'.format(i+1)
                 elif records[i].find_element_by_css_selector(css_td).text != value and i == len(records) - 1:
                     raise FoundRecordError(value, locator)
         elif val.text != td_val and index == len(tds)-1:
             raise FoundRecordError(td_val, locator)
+
+
+def select_operation_by_field(driver, table_locator, field_name, value, opera_text):
+    """
+
+    :param driver:
+    :param table_locator: 表的css locator
+    :param attr_name: 属性名称
+    :param value: 属性的值
+    :param opera_text: 操作文案
+    :return:
+    """
+    record_locator = get_record_by_field_value(driver, table_locator, field_name, value)
+    try:
+        text_list = [x.text for x in WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
+    except:
+        sleep(1)
+        text_list = [x.text for x in WebDriverWait(driver, 5).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
+    for index, text in enumerate(text_list):
+        if "操作" in text:
+            a_css = record_locator + '>td:nth-child({})'.format(index+1)
+            try:
+                WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(opera_text).click()
+            except:
+                sleep(1)
+                WebDriverWait(driver, 5).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(
+                    opera_text).click()
+        elif "操作" not in text and index == len(text_list)-1:
+            raise IndexError  # FoundRecordError("操作", table_locator)
 
 
 def get_opera_text(driver, opera_locator):
@@ -384,6 +430,23 @@ def input_ori_des(driver,  origin, ori_value, destination, des_value):
             EC.text_to_be_present_in_element_value((By.CSS_SELECTOR, '#sel_destination'), des_value))
     except:
         return '输入终点方位错误'
+
+
+def generate_password():
+    s = ''
+    cha_l = 'abcdefghijklmnopqrstuvwxyz'
+    cha_u = 'ABCDEFGHIJKLMNOPQRESTUVWXYZ'
+    for i in range(2):
+        t = random.choice(cha_l)
+        s += t
+    for i in range(2):
+        t = random.randrange(0, 9, 1)
+        s += str(t)
+    s += '_'
+    for i in range(5):
+        t = random.choice(cha_u)
+        s += t
+    return s
 
 
 class TestMeta(type):

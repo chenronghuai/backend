@@ -8,11 +8,7 @@ import utils
 from utils import OrderType
 from utils import TestMeta
 import globalvar
-import logging
 from sys import argv
-
-
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 @ddt
@@ -22,6 +18,7 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver,  '班线管理', '班次管理', 'flights.do')
+        globalvar.opened_window_pool.append('flights.do')
 
     def add_flight(self, center, line, flight_no, seat_num, depart_date, depart_time):
         self.driver.find_element_by_css_selector('#selCenter').click()

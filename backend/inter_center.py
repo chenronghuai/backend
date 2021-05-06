@@ -2,18 +2,15 @@ import unittest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import StaleElementReferenceException
 from time import sleep
 from ddt import ddt, file_data, data, unpack
 import utils
 from utils import OrderType, DriverType, FoundRecordError, OrderStatus, CarType, FoundDriverError
 from utils import TestMeta
 import globalvar
-import logging
 import re
 from sys import argv
-
-
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 def get_commit_order():
@@ -27,10 +24,12 @@ def get_commit_order():
 
 @ddt
 class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
+    current_oc_center = []
     @classmethod
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '城际调度中心', 'orderCenterNew.do')
+        globalvar.opened_window_pool.append('orderCenterNew.do')
         if argv[1] == 'HTTP1':
             cls.input_center_line("物流中心", "XMC", "361000", "XM", "361000")
         else:
@@ -44,6 +43,8 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
             "$('div.fs-dropdown.hidden>div.fs-options>div').each(function(ind,obj){if($(this).hasClass('selected')){$(this).click();}})")
         cls.driver.execute_script(
             "$('div.fs-dropdown.hidden>div.fs-options>div>div.fs-option-label').filter(function(index){return $(this).text()=='" + center + "';}).click()")
+        cls.current_oc_center.clear()
+        cls.current_oc_center.append(center)
         utils.input_ori_des(cls.driver, origin, ori_value, destination, des_value)
         cls.driver.find_element_by_css_selector('div#ipt_line_query').click()
 
@@ -149,7 +150,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         self.driver.switch_to.parent_frame()
 
     def filter_driver(self, order):
-        net_drivers = list(filter(lambda _driver: _driver.driver_type == DriverType.NET_DRIVER, globalvar.driver_pool))
+        net_drivers = list(filter(lambda _driver: _driver.driver_type == DriverType.NET_DRIVER and _driver.oc_center in self.current_oc_center, globalvar.driver_pool))
         if order.order_type in [OrderType.CARPOOLING, OrderType.FASTLINE]:
             for index, driver in enumerate(net_drivers):
                 if order.order_count <= driver.max_user-driver.appoint_user_count and driver.charter_count == 0:
@@ -181,6 +182,35 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                     elif index == len(free_drivers) - 1:
                         raise IndexError  # FoundDriverError(order.order_type)
                         return '没有合适的司机'
+
+    @unittest.skipIf(argv[1] != 'HTTP1', '非测试环境不跑')
+    @data('泉州运营中心', '物流中心')
+    def test_driver_permission(self, oc_center):
+        except_iter = []
+        unexcept_iter = []
+        self.input_center_line(oc_center, "XMC", "361000", "XM", "361000")
+        goal_drivers = list(
+            filter(lambda driver_: driver_.oc_center in self.current_oc_center, globalvar.driver_pool))
+        goal_not_drivers = list(
+            filter(lambda driver_: driver_.oc_center not in self.current_oc_center, globalvar.driver_pool))
+
+        try:
+            driver_id_list = []
+            we_actual_drivers = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'tbody#tdy_driver_queue>tr')))
+            for i in we_actual_drivers:
+                driver_id_list.append(i.get_attribute('driver-id'))
+        except StaleElementReferenceException:
+            driver_id_list = []
+            we_actual_drivers = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'tbody#tdy_driver_queue>tr')))
+            for i in we_actual_drivers:
+                driver_id_list.append(i.get_attribute('driver-id'))
+        for driver in goal_drivers:
+            except_iter.append(driver.driver_id in driver_id_list)
+        for driver in goal_not_drivers:
+            unexcept_iter.append(driver.driver_id in driver_id_list)
+        return all(except_iter) and not any(unexcept_iter)
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(OrderType.CARPOOLING, OrderType.EXPRESS, OrderType.CHARACTER)
@@ -255,7 +285,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
     @data(1, 2)
 #    @unittest.skip("直接跳过")
     def test_depart(self, index):
-        depart_drivers = list(filter(lambda x: x.driver_type == DriverType.NET_DRIVER, globalvar.driver_pool))
+        depart_drivers = list(filter(lambda x: x.driver_type == DriverType.NET_DRIVER and x.oc_center in self.current_oc_center, globalvar.driver_pool))
         self.driver.find_element_by_css_selector('#driverList').click()
         self.driver.find_element_by_css_selector('div.bbx-orderlist-nav>.nav-right.td-opera>a[title="专车排班"]').click()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody#tdy_driver_queue>tr')))
@@ -277,3 +307,6 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         status = True if depart_drivers[index-1].driver_id in id_list else False
         self.assertTrue(status)
         sleep(1)
+
+
+

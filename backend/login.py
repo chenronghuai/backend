@@ -1,7 +1,10 @@
 from selenium import webdriver
 import utils
-import os
+import log
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import WebDriverException
 from time import sleep
+from sys import argv
 from pytesseract import image_to_string
 from PIL import ImageEnhance, ImageGrab
 from selenium.webdriver.common.by import By
@@ -16,9 +19,13 @@ def login(url_section, user_section):
     :param user: 用户信息,读取config.ini的user section
     :return: driver
     """
-    driver = webdriver.Chrome()
-    globalvar.set_value('driver', driver)
-    driver.get(utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl'))
+    try:
+        driver = webdriver.Chrome()
+        globalvar.set_value('driver', driver)
+        driver.get(utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl'))
+    except WebDriverException:
+        log.logger.critical(f"服务器{utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl')}没有反应")
+        exit(1)
     driver.maximize_window()
     driver.find_element_by_id('username').send_keys(utils.read_config_value(user_section, 'username'))
     driver.find_element_by_id('userpwd').send_keys(utils.read_config_value(user_section, 'password'))
@@ -44,17 +51,37 @@ def login(url_section, user_section):
         sleep(0.5)
         try:
             text_tip = driver.find_element_by_id('error-msg').text
-            if text_tip is None:
-                break
 
-        except:
+            if text_tip == '':
+                break
+            elif text_tip == '图形答案不正确':
+                WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, '#changeImg'))).click()
+            elif text_tip == '用户名或密码错误':
+                raise ValueError('用户名或密码错误！')
+
+        except ValueError:
+            log.logger.critical('用户名或密码错误')
+            exit(2)
+
+        except NoSuchElementException:
             break
 
     sleep(2)  # 出现安全预警弹窗没有关闭的情形，怀疑js没有加载完整，暂用此方法规避
     # 如果出现修改密码弹窗，关闭
     try:
+        '''
         WebDriverWait(driver, 3).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="layui-layer layui-layer-page yourclass layer-anim"]>span.layui-layer-setwin>a'))).click()
+        '''
+        new_psw = utils.generate_password()
+        WebDriverWait(driver, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userpwd'))).send_keys(new_psw)
+        WebDriverWait(driver, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userpwdSure'))).send_keys(
+            new_psw)
+        WebDriverWait(driver, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnSure'))).click()
+        utils.modify_config_value(argv[2], 'password', new_psw)
+        driver.quit()
+        login(url_section, user_section)
     except:
         pass
     # 如果出现乘客安全预警弹窗，关闭

@@ -15,13 +15,22 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
 
     @classmethod
     def setUpClass(cls):
-        cls.inter_orders = list(filter(
-            lambda order: order.order_type in [OrderType.CARPOOLING, OrderType.CHARACTER, OrderType.EXPRESS,
+        cls.orders = list(filter(
+            lambda order: order.order_type in [OrderType.CARPOOLING, OrderType.CHARACTER, OrderType.EXPRESS, OrderType.INNER, OrderType.HELPDRIVE,
                                                OrderType.DAYSCHARACTER], globalvar.order_pool))
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '订单管理', 'orderManage.do')
+        globalvar.opened_window_pool.append('orderManage.do')
         utils.input_ori_des(cls.driver, "XMC", "361000", "XM", "361000")
+#        cls.input_customer_phone(14759250515)
         WebDriverWait(cls.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
+
+    @classmethod
+    def input_customer_phone(cls, phone):
+        WebDriverWait(cls.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#moreSpan'))).click()
+        WebDriverWait(cls.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnClean'))).click()
+        cls.driver.find_element_by_css_selector('#phone').send_keys(phone)
+        cls.driver.find_element_by_css_selector('#moreSpan').click()
 
     def operate_dialog(self, driver, button_css_locator, iframe_src, operator_css_locator):
         WebDriverWait(driver, 15).until(
@@ -32,10 +41,14 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
             EC.visibility_of_element_located((By.CSS_SELECTOR, operator_css_locator))).click()
         driver.switch_to.parent_frame()
 
-    @data(1, 2, 3, 4, 5, 6)
+    @data(1, 2, 3, 4, 5, 6, 7, 8, 9)
     def test_complete_order(self, index):
-#        self.driver.find_element_by_css_selector('#btnQuery').click()
-        order = self.inter_orders[index-1]
+        order = self.orders[index-1]
+        if order.order_type in [OrderType.INNER, OrderType.HELPDRIVE]:  # 处理市内及代驾订单
+            self.driver.find_element_by_css_selector('#btnClean').click()
+            TestOrderManage.input_customer_phone(14759250515)
+            WebDriverWait(self.driver, 10).until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
         css = utils.get_record_by_attr(self.driver, 'table#data_table>tbody>tr', 'order-list-id', order.order_id)
 
         if order.order_status == OrderStatus.APPOINTED:

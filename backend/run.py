@@ -8,15 +8,15 @@ import os
 from sys import argv
 import login
 import globalvar
+import log
 from customer_call import TestCustomerCall
-import logging
 from inter_center import TestInterCenter
 from order_manage import TestOrderManage
 from flight_center import TestFlightCenter
 from flight_order_manage import TestFlightOrderManage
+from test_oc_share import TestOcShare
+from test_price import TestPrice
 from flights_manage import TestFlightsManage
-
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 def action_login():
@@ -25,7 +25,6 @@ def action_login():
         exit(1)
     else:
         globalvar.init()
- #       driver = login.login(argv[1], argv[2])
         login.login(argv[1], argv[2])
 
 
@@ -36,28 +35,38 @@ def action_quit():
 if __name__ == '__main__':
     try:
         now_time = strftime("%Y-%m-%d %H-%M-%S")
+
         report_path = Path(os.path.join(utils.get_path(), os.path.pardir) + '//testreport//')
         if report_path.exists():
             pass
         else:
             os.mkdir(os.path.join(utils.get_path(), os.path.pardir) + '//testreport//', 0o777)
+
+        log_path = Path(os.path.join(utils.get_path(), os.path.pardir) + '//log//')
+        if log_path.exists():
+            pass
+        else:
+            os.mkdir(os.path.join(utils.get_path(), os.path.pardir) + '//log//', 0o777)
+
         file_path = os.path.abspath(
             os.path.join(utils.get_path(), os.path.pardir)) + "//testreport//" + now_time + "_result.html"
         file_result = open(file_path, 'wb')
-        runner = HTMLTestRunner.HTMLTestRunner(file_result, 2, u"业务后台自动化测试报告", u"执行概况")
+        runner = HTMLTestRunner.HTMLTestRunner(file_result, 2, u"业务后台自动化测试报告", u"执行概况", tester='陈荣怀')
 
         action_login()
 
         suite_flow = unittest.TestSuite()
         suite_one = unittest.TestSuite()
         suite_all = unittest.TestSuite()
-
         suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDriverReport))
         suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))
         suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInterCenter))
         suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightCenter))
         suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestOrderManage))
         suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightOrderManage))
+        if argv[1] == 'HTTP1':
+            suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestOcShare))
+        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPrice))
 
         suite_one.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))
 

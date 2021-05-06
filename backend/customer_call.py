@@ -10,14 +10,12 @@ import utils
 from utils import OrderType, OrderStatus, CarType
 from utils import TestMeta
 import globalvar
-import logging
+import log
 from sys import argv
 from common import Order
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
-
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 count = 1
 _create_flag = True
@@ -30,6 +28,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '客户来电', 'customerCall.do')
+        globalvar.opened_window_pool.append('customerCall.do')
 
     def getUserInfo(self, phone):
         self.driver.execute_script("$('#userTypeDiv').html('')")
@@ -40,8 +39,11 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         self.driver.find_element_by_css_selector("#query_all").click()
         WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#userTypeDiv')))
-        WebDriverWait(self.driver, 5).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#callOrderPage>table>tbody>tr')))
+        try:  # 新用户记录可能为空
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#callOrderPage>table>tbody>tr')))
+        except:
+            pass
 
     def selectOrderType(self, order_type):
         """
@@ -216,7 +218,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         globalvar.set_value('FlightNo', flight_no_str)
         self.driver.find_element_by_css_selector('#btnSave').click()
         self.driver.switch_to.parent_frame()
-        utils.switch_exist_frame(self.driver, 'flights.do', 'customerCall.do')
+        utils.switch_exist_frame(self.driver, 'customerCall.do', '客户')
 
     def orderExpress(self, ori_city, ori_addr, des_city, des_addr):
         WebDriverWait(self.driver, 5).until(
@@ -361,6 +363,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         new_order.order_count = int(count)
         new_order.order_status = OrderStatus.WAITING
         new_order.car_type = car_type
+        new_order.source_oc_code = utils.read_config_value(argv[2], 'oc')
         globalvar.add_order(new_order)
 
     def save_order(self, index, order_type, car_type=CarType.ANY):
@@ -369,6 +372,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             css = '#callOrderPage>table>tbody>tr'
         order_id = self.driver.find_element_by_css_selector(css).get_attribute('order-id')
+        log.logger.debug(f'新增{order_type}订单：{order_id}')
         appoint_time = self.driver.find_element_by_css_selector(css + '>td:nth-child(1)').text
         count = self.driver.find_element_by_css_selector(css + '>td:nth-child(3)').text
         self.create_order(order_id, order_type, appoint_time, car_type, count)
@@ -459,15 +463,15 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
 
-    '''
-    test_case = ["14759250515", "5603293", "XM", "厦门市|XMSmm", "软件园二期", "软件园观日路24号", "", "T"],
-    prod_case = ["14759250515", "5603293", "XM", "厦门市|XMSN", "软件园二期", "软件园观日路24号", "", "T"],
 
-    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    test_case = ["14759250515", "5603293", "XM", "厦门市|XMSmm", "软件园二期", "软件园观日路24号", "商务七座/7座/豪华型", "", "T"],
+    prod_case = ["14759250515", "5603293", "XM", "厦门市|XMSN", "软件园二期", "软件园观日路24号", "商务七座/7座/豪华型", "", "T"],
+
+    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'HTTP1', '非流程或测试环境不跑')
     @data(*test_case if argv[1] == 'HTTP1' else prod_case)
     @unpack
 #    @file_data('.\\testcase\\order_inner.json')
-    def test_order_inner(self, phone, by_phone,  origin_region_index, origin_region, origin_addr, des_addr, t_time, flow):
+    def test_order_inner(self, phone, by_phone,  origin_region_index, origin_region, origin_addr, des_addr, car_type, t_time, flow):
         assert_dict = {}
         assert_dict["phone"] = phone
         assert_dict["order_type"] = "市内叫车"
@@ -477,13 +481,19 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         self.input_customer_phone(by_phone)
         self.orderInnerCity(origin_region_index, origin_region, origin_addr, des_addr)
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#car-types-div')), '没有相应车型或价格')
+        car_type_xpath = '//div/label[text()="' + car_type + '"]'
+        self.driver.find_element(By.XPATH, car_type_xpath).click()
         self.selectDate('', t_time)
         sleep(1)
+        self.driver.find_element(By.XPATH, '//div/label[text()="一口价（元）"]').click()
+        self.commit(pricetip_flag=False)
+        '''
         if self.driver.execute_script('return $("#priceShow").val()') == '打表计价':
             sleep(1)
             self.commit(pricetip_flag=False)
         else:
             self.commit()
+        '''
         i = self.checkitem(assert_dict["order_type"])
         if flow == 'T':
             self.save_order(i, OrderType.INNER)
@@ -498,7 +508,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_byphone = utils.get_cell_content(self.driver, '#callOrderPage>table', i, 4)
         self.assertEqual(assert_dict['by_phone'], rs_byphone)
 
-    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'HTTP1', '非流程或测试环境不跑')
     @file_data('.\\testcase\\order_dayscharter.json')
     def test_order_dayscharter(self, phone, by_phone, origin_region_index, origin_region, origin_addr,
                                des_region_index, time_long, des_addr, car_type, date, time, flow):
@@ -528,9 +538,9 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['order_type'], rs_type)
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
-    '''
+
     test_case = ["14759250515", "13328775856", "福建省|厦门市|350200", "高林居住区", "福建省|厦门市|350200", "中医院", "1", "T"],
-    prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田县汽车站", "福建省|三明市|350400", "大田出口", "1", "T"],
+    prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田汽车站", "福建省|三明市|350400", "大田县行政服务中心", "1", "T"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
 #    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
@@ -587,11 +597,11 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['order_type'], rs_type)
             rs_count = utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3)
             self.assertEqual(customer_count, rs_count)
-    '''
+
     test_case = ["14759250515", "5603293", "厦门市|xmsndj",  "软件园二期", "软件园观日路24号", "T"],
     prod_case = ["14759250515", "5603293", "厦门市|xmsdj",  "软件园二期", "软件园观日路24号", "T"],
 
-    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'HTTP1', '非流程或测试环境不跑')
     @data(*test_case if argv[1] == 'HTTP1' else prod_case)
     @unpack
 #    @file_data('.\\testcase\\order_helpdrive.json')
@@ -617,7 +627,6 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['order_type'], rs_type)
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
-    '''
 
 
 
