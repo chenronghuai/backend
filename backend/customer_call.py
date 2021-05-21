@@ -37,7 +37,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         we_number.send_keys(phone)
         self.driver.execute_script('$("#callOrderPage>table>tbody").html("")')
         self.driver.find_element_by_css_selector("#query_all").click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(self.driver, 15).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#userTypeDiv')))
         try:  # 新用户记录可能为空
             WebDriverWait(self.driver, 3).until(
@@ -90,7 +90,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         if len(self.driver.find_elements_by_css_selector('#startName-suggest>div')) > 1:
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
                 '//*[@id="startName-suggest"]/div[@text="' + origin_region + '"]')), '起始方位无法获取').click()
-#        self.driver.execute_script("$('#endsName-suggest').html('')")
+        self.driver.execute_script("$('#endsName-suggest').html('')")
         sleep(0.5)
         we_ori_addr = self.driver.find_element_by_css_selector('#startAddr')
         WebDriverWait(self.driver, 5).until(
@@ -114,7 +114,10 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
                 '起点POI无法获取').click()
         WebDriverWait(self.driver, 5).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')))
-        sleep(0.5)
+        if argv[1] != 'STAGE':
+            sleep(0.5)
+        else:
+            sleep(2)  # 灰度环境响应慢，需要等待更长时间
 
     def selectInterDestination(self, des_region_index, des_addr):
         """
@@ -194,7 +197,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             '//*[@id="selCenter-suggest"]/div[@text="10596|漳州运营中心"]')), '运营中心无法选取').click()
 #        self.driver.find_element_by_css_selector('#selLine').clear()
         self.driver.find_element_by_css_selector('#selLine').send_keys(Keys.BACKSPACE)
-        if argv[1] == 'HTTP1':
+        if argv[1] == 'TEST':
             self.driver.find_element_by_css_selector('#selLine').send_keys('高林SM专线')
         else:
             self.driver.find_element_by_css_selector('#selLine').send_keys('厦门测试班线')
@@ -343,7 +346,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             sleep(0.5)
             WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#call-see-order'))).click()
-        sleep(1)
+        sleep(2)
         b_match = False
         for i in range(1, len(self.driver.find_elements_by_css_selector('#callOrderPage>table>tbody>tr'))+1):
             if str_filter != '快巴':
@@ -467,8 +470,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
     test_case = ["14759250515", "5603293", "XM", "厦门市|XMSmm", "软件园二期", "软件园观日路24号", "商务七座/7座/豪华型", "", "T"],
     prod_case = ["14759250515", "5603293", "XM", "厦门市|XMSN", "软件园二期", "软件园观日路24号", "商务七座/7座/豪华型", "", "T"],
 
-    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'HTTP1', '非流程或测试环境不跑')
-    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
+    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'TEST', '非流程或测试环境不跑')
+    @data(*test_case if argv[1] == 'TEST' else prod_case)
     @unpack
 #    @file_data('.\\testcase\\order_inner.json')
     def test_order_inner(self, phone, by_phone,  origin_region_index, origin_region, origin_addr, des_addr, car_type, t_time, flow):
@@ -487,13 +490,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         sleep(1)
         self.driver.find_element(By.XPATH, '//div/label[text()="一口价（元）"]').click()
         self.commit(pricetip_flag=False)
-        '''
-        if self.driver.execute_script('return $("#priceShow").val()') == '打表计价':
-            sleep(1)
-            self.commit(pricetip_flag=False)
-        else:
-            self.commit()
-        '''
+
         i = self.checkitem(assert_dict["order_type"])
         if flow == 'T':
             self.save_order(i, OrderType.INNER)
@@ -508,7 +505,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         rs_byphone = utils.get_cell_content(self.driver, '#callOrderPage>table', i, 4)
         self.assertEqual(assert_dict['by_phone'], rs_byphone)
 
-    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'HTTP1', '非流程或测试环境不跑')
+    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'TEST', '非流程或测试环境不跑')
     @file_data('.\\testcase\\order_dayscharter.json')
     def test_order_dayscharter(self, phone, by_phone, origin_region_index, origin_region, origin_addr,
                                des_region_index, time_long, des_addr, car_type, date, time, flow):
@@ -543,9 +540,9 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
     prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田汽车站", "福建省|三明市|350400", "大田县行政服务中心", "1", "T"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-#    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
+#    @data(*test_case if argv[1] == 'TEST' else prod_case)
 #    @unpack
-    @file_data('.\\testcase\\order_fastline.json' if argv[3] == 'flow' and argv[1] == 'HTTP1' else '.\\testcase\\order_fastline1.json')
+    @file_data('.\\testcase\\order_fastline.json' if argv[3] == 'flow' and argv[1] == 'TEST' else '.\\testcase\\order_fastline1.json')
     def test_order_fastline(self, phone, by_phone, origin_city, origin_addr, des_city, des_addr, customer_count, flow):
         global _create_flag
         if flow == 'T' and _create_flag:
@@ -601,8 +598,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
     test_case = ["14759250515", "5603293", "厦门市|xmsndj",  "软件园二期", "软件园观日路24号", "T"],
     prod_case = ["14759250515", "5603293", "厦门市|xmsdj",  "软件园二期", "软件园观日路24号", "T"],
 
-    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'HTTP1', '非流程或测试环境不跑')
-    @data(*test_case if argv[1] == 'HTTP1' else prod_case)
+    @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'TEST', '非流程或测试环境不跑')
+    @data(*test_case if argv[1] == 'TEST' else prod_case)
     @unpack
 #    @file_data('.\\testcase\\order_helpdrive.json')
     def test_order_helpdrive(self, phone, receive_phone, city, origin_addr, des_addr, flow):
@@ -627,6 +624,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(assert_dict['order_type'], rs_type)
             rs_count = int(utils.get_cell_content(self.driver, '#callOrderPage>table', i, 3))
             self.assertEqual(1, rs_count)
+
 
 
 

@@ -35,7 +35,7 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until_not(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe[src^="/flights.do?method=editLineFlights"]')))
 
-    @data({"center":"漳州运营中心", "line":"高林SM专线", "flight_no":"CS008", "seat_num":"20", "depart_date":"2020-12-03", "depart_time":"11:40"} if argv[1] == 'http1'
+    @data({"center":"漳州运营中心", "line":"高林SM专线", "flight_no":"CS008", "seat_num":"20", "depart_date":"2020-12-03", "depart_time":"11:40"} if argv[1] == 'TEST'
           else {"center":"漳州运营中心", "line":"厦门测试班线", "flight_no":"CS001", "seat_num":"20", "depart_date":"2020-12-01", "depart_time":"17:40"})
     @unpack
     def test_add_flihgts(self, center, line, flight_no, seat_num, depart_date, depart_time):

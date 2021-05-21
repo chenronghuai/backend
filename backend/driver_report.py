@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from time import sleep, strftime
 from sys import argv
 import log
+from selenium.common.exceptions import TimeoutException
 import datetime
 from selenium import webdriver
 from ddt import ddt, data, file_data, unpack
@@ -53,9 +54,9 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         self.driver.find_element(By.CSS_SELECTOR, '#query_driver').click()
         try:
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody>tr')))
-        except:
-            log.logger.error(f'列表找不到司机：{phone}')
-            return None
+        except TimeoutException:  # except语句没有作用
+            log.logger.error(f'列表找不到号码为{phone}的司机')
+            raise ValueError
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(
             (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]')))
@@ -147,18 +148,18 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
     prod_phone = [13345678965, "361000", "361000"], [18030142505, "361000", "361000"]
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data(*test_phone if argv[1] == 'HTTP1' else prod_phone)
+    @data(*test_phone if argv[1] == 'TEST' else prod_phone)
     @unpack
     def test_driver_report_by_phone(self, phone, ori_val, des_val):
         report_status = self.driver_report_by_phone(phone, ori_val, des_val)
         self.assertEqual(report_status, '报班')
 
-    test_car = ["闽C57D12", "13345678965", "361000", "361000"],
+    test_car = ["闽D223E5", "13345678965", "361000", "361000"],
     prod_car = ["闽D888888", "17700000000", "361000", "361000"],
 
     @unpack
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data(*test_car if argv[1] == 'HTTP1' else prod_car)
+    @data(*test_car if argv[1] == 'TEST' else prod_car)
     def test_driver_report_by_carnum(self, carnum, phone, ori_val, des_val):
         report_status = self.driver_report_by_carnum(carnum, phone, ori_val, des_val)
         self.assertEqual(report_status, '报班')
@@ -166,7 +167,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
     test_driver = (13565498722,)
     prod_driver = (18030142505,)
 
-    @data(*test_driver if argv[1] == 'HTTP1' else prod_driver)
+    @data(*test_driver if argv[1] == 'TEST' else prod_driver)
     def test_driver_cancel_report(self, phone):
         report_status = self.driver_cancel_report(phone)
         self.assertEqual(report_status, '未报班')

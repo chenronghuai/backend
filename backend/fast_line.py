@@ -78,18 +78,20 @@ def add_bus_order(driver, order_id):
     :param order_id:订单ID
     :return:
     """
-    WebDriverWait(driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
+    WebDriverWait(driver, 15).until(EC.frame_to_be_available_and_switch_to_it(
         (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getKbDriverAddOrdersPage"]')))
     driver.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
-    if argv[1] == 'HTTP1':
+    if argv[1] == 'TEST':
         WebDriverWait(driver, 5).until(EC.presence_of_element_located(
             (By.XPATH, '//div[@class="fs-options"]/div[@class="fs-option"]/div[text()="高林SM专线"]'))).click()
     else:
-        WebDriverWait(driver, 5).until(EC.presence_of_element_located(
+        WebDriverWait(driver, 15).until(EC.presence_of_element_located(
             (By.XPATH, '//div[@class="fs-options"]/div[@class="fs-option"]/div[text()="厦门测试班线"]'))).click()
+    if argv[1] == 'STAGE':
+        sleep(15)
     driver.find_element_by_css_selector('#btnQuery').click()
 
-    WebDriverWait(driver, 5).until(EC.presence_of_element_located(
+    WebDriverWait(driver, 15).until(EC.presence_of_element_located(
         (By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
     try:
         orders = driver.find_elements_by_css_selector('div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')

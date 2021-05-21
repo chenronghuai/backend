@@ -5,6 +5,7 @@ import configparser
 import random
 import globalvar
 import log
+from sys import argv
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -208,6 +209,7 @@ def get_first_order(order_type):
         if order.order_type == order_type and order.order_status == OrderStatus.WAITING:
             return order
         elif index == len(globalvar.order_pool)-1:
+            log.logger.warning(f'订单池里没有{order_type}类型的订单')
             raise IndexError
 
 
@@ -245,14 +247,14 @@ def get_record_by_attr(driver, locator, attr_name, value):
             try:
                 actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
             except StaleElementReferenceException:
-                sleep(1)
+                sleep(1.5)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低)
                 actual_value = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
                     attr_name)
             if actual_value == value:
                 return locator + ':nth-child({})'.format(i + 1)
             elif actual_value != value and i == len(records) - 1:
-                log.logger.info(f'订单列表里找不到{attr_name}={value}的订单')
+                log.logger.info(f'{locator}列表里找不到{attr_name}={value}的记录')
                 raise FoundRecordError(value, locator)
     else:
         log.logger.warning(f'该定位下({locator})没有找到任何记录')
@@ -407,9 +409,9 @@ def input_ori_des(driver,  origin, ori_value, destination, des_value):
         we_ori.clear()
         WebDriverWait(driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#startName-suggest>div')))
-        driver.execute_script("$('div#endsName-suggest').html('')")
+        driver.execute_script("$('div#endsName-suggest').html('')")  # 清除目的方位，用于判断起始方位确定后，目的建议方位返回时机
         we_ori.click()
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, 15).until(
             lambda x: x.execute_script("return $('#startName-suggest').css('display')") == 'block')
         we_ori.send_keys(origin)
         WebDriverWait(driver, 5).until(
@@ -418,12 +420,15 @@ def input_ori_des(driver,  origin, ori_value, destination, des_value):
         return '输入起点方位错误'
 
     try:
+        if argv[1] == 'STAGE':
+            sleep(2.5)  # 灰度环境增加等待时间
         we_des = driver.find_element_by_css_selector('#endsName')
         we_des.clear()
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, 15).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
+#        driver.execute_script("$('div#endsName-suggest').html('')")
         we_des.click()
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, 15).until(
             lambda x: x.execute_script("return $('#endsName-suggest').css('display')") == 'block')
         we_des.send_keys(destination)
         WebDriverWait(driver, 5).until(

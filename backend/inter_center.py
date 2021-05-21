@@ -13,25 +13,17 @@ import re
 from sys import argv
 
 
-def get_commit_order():
-    case_str = ""
-    for i in range(5):
-        order_str = str("物流中心", "XMC", "361000", "XM", "361000")
-        case_str += ',' + order_str
-    temp = case_str.strip(',')
-    return eval(temp)
-
-
 @ddt
 class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
     current_oc_center = []
+    oc_flag = True
     @classmethod
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '城际调度中心', 'orderCenterNew.do')
         globalvar.opened_window_pool.append('orderCenterNew.do')
-        if argv[1] == 'HTTP1':
-            cls.input_center_line("物流中心", "XMC", "361000", "XM", "361000")
+        if argv[1] == 'TEST':
+            cls.input_center_line("厦门运营中心", "XMC", "361000", "XM", "361000")
         else:
             cls.input_center_line("漳州运营中心", "XMC", "361000", "XM", "361000")
 
@@ -46,6 +38,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         cls.current_oc_center.clear()
         cls.current_oc_center.append(center)
         utils.input_ori_des(cls.driver, origin, ori_value, destination, des_value)
+        sleep(1)  # 2021-5-21 灰度环境经常目的地方位被情况，怀疑与查询操作有冲突，加等待试试
         cls.driver.find_element_by_css_selector('div#ipt_line_query').click()
 
     def appoint_order(self, order_id, driver_id):
@@ -158,7 +151,6 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                     return driver
                 elif index == len(net_drivers)-1:
                     raise IndexError  # FoundDriverError(order.order_type)
-                    return '没有合适的司机'
 
         elif order.order_type == OrderType.EXPRESS:
             for index, driver in enumerate(net_drivers):
@@ -167,13 +159,11 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                     return driver
                 elif index == len(net_drivers)-1:
                     raise IndexError  # FoundDriverError(order.order_type)
-                    return '没有合适的司机'
 
         elif order.order_type in [OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
             free_drivers = list(filter(lambda x: x.charter_count == 0 and x.appoint_user_count == 0, net_drivers))
             if len(free_drivers) == 0:
                 raise IndexError
-                return '没有合适的司机'
             else:
                 for index, driver in enumerate(free_drivers):
                     if CarType.PRIORITY_DIST[driver.car_type] >= CarType.PRIORITY_DIST[order.car_type]:
@@ -181,10 +171,9 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                         return driver
                     elif index == len(free_drivers) - 1:
                         raise IndexError  # FoundDriverError(order.order_type)
-                        return '没有合适的司机'
 
-    @unittest.skipIf(argv[1] != 'HTTP1', '非测试环境不跑')
-    @data('泉州运营中心', '物流中心')
+    @unittest.skipIf(argv[1] != 'TEST', '非测试环境不跑')
+    @data('泉州运营中心', '厦门运营中心')
     def test_driver_permission(self, oc_center):
         except_iter = []
         unexcept_iter = []
@@ -216,6 +205,9 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
     @data(OrderType.CARPOOLING, OrderType.EXPRESS, OrderType.CHARACTER)
 #    @unpack
     def test_appoint(self, order_type):
+        if self.oc_flag and argv[1] == 'TEST':
+            self.input_center_line("厦门运营中心", "XMC", "361000", "XM", "361000")
+            self.oc_flag = False
         order = utils.get_first_order(order_type)
         driver = self.filter_driver(order)
         if driver == '没有合适的司机':
@@ -256,7 +248,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                 (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getDriverAddBusOrdersPage"]')))
             self.driver.find_element_by_css_selector('div.fs-label-wrap>div.fs-label').click()
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.fs-options>div>div.fs-option-label')))
-            if argv[1] == 'HTTP1':
+            if argv[1] == 'TEST':
                 self.driver.execute_script(
                     "$('div.fs-dropdown>div.fs-options>div>div.fs-option-label').filter(function(index){return $(this).text()=='高林SM专线';}).click()")
             else:

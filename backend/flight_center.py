@@ -6,6 +6,7 @@ from selenium.common.exceptions import TimeoutException
 from time import sleep
 from ddt import ddt, data, unpack
 import utils
+import log
 import fast_line
 from utils import OrderType, DriverType, OrderStatus, FoundDriverError
 from utils import TestMeta
@@ -43,33 +44,38 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         try:
             WebDriverWait(self.driver, 20).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selCenter-suggest>div')))
             self.driver.find_element_by_css_selector('#selCenter').click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
+            WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
             WebDriverWait(self.driver, 20).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selLine-suggest>div')))
             self.driver.find_element_by_css_selector('#selLine').click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
+            WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname$="' + line + '"]'))).click()
 
             self.driver.find_element_by_css_selector('#flightsDate').click()
             WebDriverWait(self.driver, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '.laydate-btns-confirm'))).click()
-            self.driver.find_element_by_css_selector('#selFlights').click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
-                (By.CSS_SELECTOR, 'div#selFlights-suggest>div[dataname="' + globalvar.get_value('FlightNo') + '"]'))).click()
-#            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
-#                (By.CSS_SELECTOR,
-#                 'div#selFlights-suggest>div[dataname="CS008"]'))).click()
-            self.driver.find_element_by_css_selector('#chooseDriver').click()
-            WebDriverWait(self.driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
+            # added 2021-5-20
+            try:
+                WebDriverWait(self.driver, 2).until(EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, 'input#selFlights[flights_no="' + globalvar.get_value('FlightNo') + '"]')))
+
+            except:
+                self.driver.find_element_by_css_selector('#selFlights').click()
+                WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, 'div#selFlights-suggest>div[dataname="' + globalvar.get_value('FlightNo') + '"]'))).click()
+
+#            self.driver.find_element_by_css_selector('#chooseDriver').click()
+            self.driver.execute_script('$("#chooseDriver").click()')
+            WebDriverWait(self.driver, 15).until(EC.frame_to_be_available_and_switch_to_it(
                 (By.CSS_SELECTOR, '[src^="/flightsOrderCenter.do?method=toChooseFlightsDriver"]')))
-            WebDriverWait(self.driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selMotorcade-suggest>div')))
+            WebDriverWait(self.driver, 15).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#selMotorcade-suggest>div')))
             WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#selMotorcade'))).click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(
+            WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#selMotorcade-suggest>div[dataname$="' + driver_team + '"]'))).click()
             self.driver.find_element_by_css_selector('#phone1').send_keys(driver_phone)
             self.driver.find_element_by_css_selector('#btnQuery').click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#driver_table>tbody>tr')))
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#driver_table>tbody>tr')))  # 无效
             td_count = self.driver.find_elements_by_css_selector('table#driver_table>tbody>tr>td')
             if len(td_count) == 1:
                 self.driver.find_element_by_css_selector('#btnEsc').click()
@@ -80,7 +86,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             self.driver.find_element_by_css_selector(css).click()
             self.driver.find_element_by_css_selector('#btnSave').click()
             self.driver.switch_to.parent_frame()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#driver-lists>tr')))
+            WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#driver-lists>tr')))
             # 添加司机进池
             driver_id = self.driver.find_element_by_css_selector('tbody#driver-lists>tr').get_attribute('driver_id')
             max_user = int(self.driver.find_element_by_css_selector('tbody#driver-lists>tr').get_attribute('max_passenger'))
@@ -91,10 +97,6 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             globalvar.add_driver(driver)
 
             self.driver.find_element_by_css_selector('#btnSave').click()
-            #如下的等待弹框消失语句，执行后将导致后续的定位出现问题，似乎默认把driver切到最外层？
-    #        WebDriverWait(self.driver, 5).until(
-    #            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-    #        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
             self.driver.switch_to.parent_frame()
         finally:
             self.driver.switch_to.default_content()
@@ -131,10 +133,10 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         sleep(3)
 
     test_case_report = ["漳州运营中心", "高林SM专线", "老王测试专用车队", "13345678972"],
-    prod_case_report = ["漳州运营中心", "厦门测试班线", "禁用", "16666666666"],
+    prod_case_report = ["漳州运营中心", "厦门测试班线", "测试，禁用", "16666666666"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data(*test_case_report if argv[1] == 'HTTP1' else prod_case_report)
+    @data(*test_case_report if argv[1] == 'TEST' else prod_case_report)
     @unpack
     def test_flight_driver_report(self, center, line, driver_team, driver_phone):
 
@@ -142,7 +144,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         self.driver.find_element_by_css_selector('#driverList').click()
         sleep(0.5)
         self.driver.execute_script("$('#addDriverSchedule').click()")
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(self.driver, 15).until(
             EC.frame_to_be_available_and_switch_to_it(
                 (By.CSS_SELECTOR, '[src^="/flightsOrderCenter.do?method=editFlightsDriver"]')))
         self.new_flight_driver(center, line, driver_team, driver_phone)
@@ -158,7 +160,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
     prod_case_appoint = ["漳州运营中心", "厦门测试班线", "17700000001"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data(*test_case_appoint if argv[1] == 'HTTP1' else prod_case_appoint)
+    @data(*test_case_appoint if argv[1] == 'TEST' else prod_case_appoint)
     @unpack
     def test_appoint(self, center, line, driver_phone):
         self.input_center_line(center, line)
@@ -182,17 +184,19 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         if status:
             fastline_orders[0].order_status = OrderStatus.APPOINTED
         self.assertTrue(status)
+        log.logger.debug(f'第一个可指派快线订单{fastline_orders[0].order_id}指派后状态为：{fastline_orders[0].order_status}')
 
     @data(OrderType.CARPOOLING, OrderType.FASTLINE)
     def test_add_order(self, order_type):
         order_ = utils.get_first_order(order_type)
         driver_ = fast_line.filter_bus_driver(order_)
-        if argv[1] == 'HTTP1':
+        if argv[1] == 'TEST':
             self.input_center_line('漳州运营中心', '高林SM专线')
         else:
             self.input_center_line('漳州运营中心', '厦门测试班线')
         driver_css = fast_line.search_extract_driver(driver_, self.driver)  # 不可直接使用filter_bus_driver得到的司机，因为同一个司机不同班次并存于列表
         pre_add_count = int(WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
+        log.logger.debug(f'补单前司机{driver_.driver_id}的已指派人数是：{pre_add_count}')
         if order_type in [OrderType.FASTLINE]:
             self.driver.find_element_by_css_selector(
                 driver_css + '>td:nth-child(11)>a[name="btnRepairOrderKb"]').click()
@@ -201,8 +205,10 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             self.driver.find_element_by_css_selector(driver_css + '>td:nth-child(11)>a[name="btnRepairOrderInterc"]').click()
             fast_line.add_inter_order(self.driver, order_.order_id)
         after_add_count = int(WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
+        log.logger.debug(f'订单人数：{order_.order_count},补单后司机{driver_.driver_id}的已指派人数是：{after_add_count}')
         status = True if after_add_count == pre_add_count + order_.order_count else False
         if status:
             order_.order_status = OrderStatus.APPOINTED
         self.assertTrue(status)
+        log.logger.debug((f'补单后订单{order_.order_id}状态为：{order_.order_status}'))
 

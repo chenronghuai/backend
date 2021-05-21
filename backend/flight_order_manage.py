@@ -30,7 +30,7 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
         global init_flag
         if init_flag:
             self.driver.find_element_by_css_selector('#selLine').click()
-            if argv[1] == 'HTTP1':
+            if argv[1] == 'TEST':
                 WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname$="高林SM专线"]'))).click()
             else:
