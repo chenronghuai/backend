@@ -72,13 +72,18 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
             self.assertEqual(text_str, '已完成')
 
         elif order.order_status == OrderStatus.WAITING:
-            css_cancel = css + '>td:nth-child(21)>a[name="order-cancel"]'   # "消单"
-            WebDriverWait(self.driver, 5).until(
-                    EC.visibility_of_element_located((By.CSS_SELECTOR, css_cancel))).click()
-            utils.cancel_order(self.driver, '联系不上司机')
-            sleep(1)
-            css_assert = css + '>td:nth-child(17)'
-#            self.driver.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，同步最新的订单状态
+            # 市内及代驾订单，超过规定时间会由系统自动取消，需增加判断
             text_str = WebDriverWait(self.driver, 15).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, css_assert))).text
-            self.assertEqual(text_str, '客服取消')
+                EC.visibility_of_element_located((By.CSS_SELECTOR, css + '>td:nth-child(17)'))).text
+            if text_str == "客服取消":
+                raise IndexError
+            else:
+                css_cancel = css + '>td:nth-child(21)>a[name="order-cancel"]'   # "消单"
+                WebDriverWait(self.driver, 5).until(
+                        EC.visibility_of_element_located((By.CSS_SELECTOR, css_cancel))).click()
+                utils.cancel_order(self.driver, '联系不上司机')
+                sleep(1)
+                css_assert = css + '>td:nth-child(17)'
+                text_str = WebDriverWait(self.driver, 15).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, css_assert))).text
+                self.assertEqual(text_str, '客服取消')

@@ -175,7 +175,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         self.appoint_flight_driver(driver_phone)
         self.driver.execute_script("$('div#orderImmediately>table>tbody#tdy_driver_queue>tr').html('')")
         self.driver.find_element_by_css_selector('#btnQuery').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr')))
+        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr')))
         status_css = utils.get_record_by_attr(self.driver, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr',
                                              'order-id', fastline_orders[0].order_id)
         status_css += '>td:nth-child(12)'
@@ -195,8 +195,8 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         else:
             self.input_center_line('漳州运营中心', '厦门测试班线')
         driver_css = fast_line.search_extract_driver(driver_, self.driver)  # 不可直接使用filter_bus_driver得到的司机，因为同一个司机不同班次并存于列表
+        assert isinstance(driver_css, str)
         pre_add_count = int(WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
-        log.logger.debug(f'补单前司机{driver_.driver_id}的已指派人数是：{pre_add_count}')
         if order_type in [OrderType.FASTLINE]:
             self.driver.find_element_by_css_selector(
                 driver_css + '>td:nth-child(11)>a[name="btnRepairOrderKb"]').click()
@@ -205,7 +205,6 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             self.driver.find_element_by_css_selector(driver_css + '>td:nth-child(11)>a[name="btnRepairOrderInterc"]').click()
             fast_line.add_inter_order(self.driver, order_.order_id)
         after_add_count = int(WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
-        log.logger.debug(f'订单人数：{order_.order_count},补单后司机{driver_.driver_id}的已指派人数是：{after_add_count}')
         status = True if after_add_count == pre_add_count + order_.order_count else False
         if status:
             order_.order_status = OrderStatus.APPOINTED

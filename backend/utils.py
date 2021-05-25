@@ -239,7 +239,8 @@ def get_record_by_attr(driver, locator, attr_name, value):
     :param value: 字符串，属性的值
     :return: 记录所在的行locator: *>table>tbody>tr:nth-child(n)
     """
-    records = WebDriverWait(driver, 10).until(
+    # 灰度环境可能需要很久的等待时间
+    records = WebDriverWait(driver, 30).until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, locator)))
     if len(records) > 0:
         for i in range(len(records)):
@@ -247,7 +248,7 @@ def get_record_by_attr(driver, locator, attr_name, value):
             try:
                 actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
             except StaleElementReferenceException:
-                sleep(1.5)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低)
+                sleep(3)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低)
                 actual_value = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
                     attr_name)
@@ -421,7 +422,7 @@ def input_ori_des(driver,  origin, ori_value, destination, des_value):
 
     try:
         if argv[1] == 'STAGE':
-            sleep(2.5)  # 灰度环境增加等待时间
+            sleep(5)  # 灰度环境增加等待时间
         we_des = driver.find_element_by_css_selector('#endsName')
         we_des.clear()
         WebDriverWait(driver, 15).until(
