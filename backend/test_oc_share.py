@@ -43,7 +43,7 @@ class TestOcShare(unittest.TestCase, metaclass=TestMeta):
 
         globalvar.order_pool = cls.temp_order_pool
 
-    @unittest.skipIf(argv[1] != 'HTTP1', '非测试环境不跑')
+    @unittest.skipIf(argv[1] != 'TEST', '非测试环境不跑')
     @data(['厦门运营中心', '物流中心', True], ['厦门运营中心', '物流中心', False])
     @unpack
     def test_oc_share(self, share_src, share_to, share_flag):
@@ -92,12 +92,12 @@ class TestOcShare(unittest.TestCase, metaclass=TestMeta):
             oc_manage.restore(self.driver, share_src, share_to)
             sleep(2)
 
-    @unittest.skipIf(argv[1] != 'HTTP1', '非测试环境不跑')
+    @unittest.skipIf(argv[1] != 'TEST', '非测试环境不跑')
     @data(['USER3', True], ['USER4', True], ['USER3', False], ['USER4', False])
     @unpack
     def test_order_filter(self, user, flag):
         temp_driver = globalvar.get_value('driver')
-        new_driver = login.login('HTTP1', user)
+        new_driver = login.login('TEST', user)
         try:
             oc_manage.share_setup(self.driver, '厦门运营中心', '物流中心', flag)
             utils.switch_frame(new_driver, '监控管理', '订单管理', 'orderManage.do')

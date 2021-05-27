@@ -1,7 +1,7 @@
 from selenium import webdriver
 import utils
 import log
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.common.exceptions import WebDriverException
 from time import sleep
 from sys import argv
@@ -27,6 +27,11 @@ def login(url_section, user_section):
         log.logger.critical(f"服务器{utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl')}没有反应")
         exit(1)
     driver.maximize_window()
+    try:
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#loginform')))
+    except TimeoutException:
+        log.logger.critical(f"服务器{utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl')}----404")
+        exit(1)
     driver.find_element_by_id('username').send_keys(utils.read_config_value(user_section, 'username'))
     driver.find_element_by_id('userpwd').send_keys(utils.read_config_value(user_section, 'password'))
 
@@ -44,8 +49,8 @@ def login(url_section, user_section):
         imgry = code_image.convert("L")
         sharpness = ImageEnhance.Contrast(imgry)
         sharp_img = sharpness.enhance(2.0)
-        str = image_to_string(sharp_img, lang='817')  # 调用名字为817.traineddata的训练数据识别验证码
-        value = utils.cal_val(str)
+        str_ = image_to_string(sharp_img, lang='817')  # 调用名字为817.traineddata的训练数据识别验证码
+        value = utils.cal_val(str_)
         WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#imgCode'))).send_keys(value)
         WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#loginBtn'))).click()
         sleep(0.5)
@@ -55,10 +60,12 @@ def login(url_section, user_section):
             if text_tip == '':
                 break
             elif text_tip == '图形答案不正确':
-                WebDriverWait(driver, 10).until(
-                    EC.visibility_of_element_located((By.CSS_SELECTOR, '#changeImg'))).click()
+                sleep(0.5)
             elif text_tip == '用户名或密码错误':
                 raise ValueError('用户名或密码错误！')
+        # 灰度环境出现如下异常
+        except StaleElementReferenceException:
+            break
 
         except ValueError:
             log.logger.critical('用户名或密码错误')
