@@ -13,11 +13,14 @@ from sys import argv
 
 @ddt
 class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
+    """
+    快线测试类
+    """
 
     @classmethod
     def setUpClass(cls):
         cls.driver = globalvar.get_value('driver')
-        utils.switch_frame(cls.driver,  '班线管理', '班次管理', 'flights.do')
+        utils.switch_frame(cls.driver, '班线管理', '班次管理', 'flights.do')
         globalvar.opened_window_pool.append('flights.do')
 
     def add_flight(self, center, line, flight_no, seat_num, depart_date, depart_time):
@@ -35,8 +38,9 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until_not(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe[src^="/flights.do?method=editLineFlights"]')))
 
-    @data({"center":"漳州运营中心", "line":"高林SM专线", "flight_no":"CS008", "seat_num":"20", "depart_date":"2020-12-03", "depart_time":"11:40"} if argv[1] == 'http1'
-          else {"center":"漳州运营中心", "line":"厦门测试班线", "flight_no":"CS001", "seat_num":"20", "depart_date":"2020-12-01", "depart_time":"17:40"})
+    @data({"center": "漳州运营中心", "line": "高林SM专线", "flight_no": "CS008", "seat_num": "20", "depart_date": "2020-12-03", "depart_time": "11:40"} if argv[1] == 'http1'
+          else {"center": "漳州运营中心", "line": "厦门测试班线", "flight_no": "CS001", "seat_num": "20",
+                "depart_date": "2020-12-01", "depart_time": "17:40"})
     @unpack
     def test_add_flihgts(self, center, line, flight_no, seat_num, depart_date, depart_time):
         self.driver.find_element_by_css_selector('#addLineFlights').click()
@@ -47,7 +51,8 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'iframe[src="/flights.do')))
+        WebDriverWait(self.driver, 5).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, 'iframe[src="/flights.do')))
         we_manage = self.driver.find_element_by_css_selector('iframe[src="/flights.do"]')
         self.driver.switch_to.frame(we_manage)
         sleep(2)
@@ -72,7 +77,3 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
         logging.critical(depart_time_list)
         status = True if depart_time in depart_time_list and flight_no in flight_no_list else False
         self.assertTrue(status)
-
-
-
-
