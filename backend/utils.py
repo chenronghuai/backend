@@ -1,5 +1,7 @@
 import os
+import re
 import time
+import unittest
 from time import sleep
 import configparser
 import random
@@ -471,3 +473,23 @@ class TestMeta(type):
                 new_attrs[new_key] = v
         return super().__new__(cls, name, bases, new_attrs)
 
+
+class SequentialTestLoader(unittest.TestLoader):
+    '''
+    按照用例的书写顺序执行，配合TestMeta类使用
+    定义时：class Testxxx(unittest,  metaclass=TestMeta)
+    加载时：SequentialTestLoader().loadTestsFromTestCase(Testxxx)
+    '''
+    def getTestCaseNames(self, testCaseClass):
+        test_names = super().getTestCaseNames(testCaseClass)
+        testcase_methods = list(testCaseClass.__dict__.keys())
+        test_names.sort(key=testcase_methods.index)
+
+        def get_index(x):
+            return int(re.match(r'test_(\d+)_.+', x).group(1))
+
+        try:
+            test_names.sort(key=get_index)
+        except:
+            pass
+        return test_names

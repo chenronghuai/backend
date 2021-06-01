@@ -204,7 +204,9 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         else:
             self.driver.find_element_by_css_selector(driver_css + '>td:nth-child(11)>a[name="btnRepairOrderInterc"]').click()
             fast_line.add_inter_order(self.driver, order_.order_id)
-        after_add_count = int(WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
+        if argv[1] == 'STAGE':
+            sleep(2)
+        after_add_count = int(WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
         status = True if after_add_count == pre_add_count + order_.order_count else False
         if status:
             order_.order_status = OrderStatus.APPOINTED
