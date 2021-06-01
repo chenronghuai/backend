@@ -473,10 +473,10 @@ def toggleLineStatus(driver, line_id, *args):
             WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
             line_iframe = driver.find_element_by_css_selector('iframe[src="/line.do"]')
             driver.switch_to.frame(line_iframe)
-        if argv[1] != 'STAGE':
-            sleep(1.5)
-        else:
+        if argv[1] != 'TEST':
             sleep(3)
+        else:
+            sleep(1.5)
 
     we_tds = driver.find_elements_by_css_selector('#line_table>tbody>tr>td')
     for element in we_tds:

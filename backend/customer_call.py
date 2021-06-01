@@ -227,7 +227,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//div[@id="startName-suggest"]/div')))
         self.driver.find_element(By.ID, 'startName').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.ID, 'startName-suggest')))
+        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.ID, 'startName-suggest')))
         WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH,
          '//*[@id="startName-suggest"]/div[@text="' + ori_city + '"]')), '起始城市无法获取').click()
         we_ori_addr = self.driver.find_element_by_id('startAddr')
