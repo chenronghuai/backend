@@ -10,6 +10,7 @@ from utils import OrderType, DriverType, FoundRecordError, OrderStatus, CarType,
 from utils import TestMeta
 import globalvar
 import re
+import log
 from sys import argv
 
 
@@ -219,6 +220,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
 #                '#orderImmediately>table>tbody#tdy_driver_queue>tr')
         appointed_orders = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#orderImmediately>table>tbody#tdy_driver_queue>tr')))
         id_list = [x.get_attribute('order-id') for x in appointed_orders]
+        log.logger.debug(f'已指派订单ID：{id_list}')
         status = True if order.order_id in id_list else False
         self.assertTrue(status)
         order.order_status = OrderStatus.APPOINTED if status else OrderStatus.WAITING

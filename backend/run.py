@@ -18,6 +18,7 @@ from test_oc_share import TestOcShare
 from test_price import TestPrice
 from EmailConfig.email import SendEmail
 from flights_manage import TestFlightsManage
+from testline import TestLine
 
 
 def action_login():
@@ -53,6 +54,7 @@ if __name__ == '__main__':
             os.path.join(utils.get_path(), os.path.pardir)) + "//testreport//" + now_time + "_result.html"
         file_result = open(file_path, 'wb')
 
+        envir_str = '未知环境'
         if argv[1] == 'TEST':
             envir_str = '测试环境'
         elif argv[1] == 'STAGE':
@@ -69,24 +71,22 @@ if __name__ == '__main__':
         suite_one = unittest.TestSuite()
         suite_all = unittest.TestSuite()
 
-        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDriverReport))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestDriverReport))
         
-        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
-        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInterCenter))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterCenter))
 
-        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightCenter))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightCenter))
 
-        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestOrderManage))
-        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightOrderManage))
-        '''
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestOrderManage))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightOrderManage))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestLine))
+
         if argv[1] == 'TEST':
-            suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestOcShare))
-        suite_flow.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPrice))
-        '''
-        suite_one.addTest(unittest.TestLoader().loadTestsFromTestCase(TestCustomerCall))
-
-    #    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFlightsManage))
+            suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestOcShare))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPrice))
+        suite_one.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
         if argv[3] == 'auto':
             runner.run(suite_one)
@@ -100,8 +100,10 @@ if __name__ == '__main__':
 
         #  发送邮件
         if utils.read_config_value('EMAIL', 'on_off') == 'on':
+            recv_str = utils.read_config_value('EMAIL', 'receive')
+            recv_list = recv_str.split(',')
             send_mail = SendEmail(
-                recv=['chenrh@bbxpc.com', 'caizj@bbxpc.com'],
+                recv=recv_list,
                 title='业务后台自动化测试报告',
                 content='Hi,\r\n\r\n    业务后台自动化测试报告邮件，请查阅！',
                 file=file_path,

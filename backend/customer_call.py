@@ -70,9 +70,9 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         if by_phone != "":
             self.driver.execute_script('$("#tel").val("' + by_phone + '")')
 
-    def input_receive_phone(self, receive_phone):
-        if receive_phone != "":
-            self.driver.execute_script('$("#receiveTel").val("' + receive_phone + '")')
+    def input_receive_phone(self, receive_name, receive_phone):
+        self.driver.execute_script('$("#receiveName").val("' + receive_name + '")')
+        self.driver.execute_script('$("#receiveTel").val("' + receive_phone + '")')
 
     def selectInterOrigin(self, origin_region_index, origin_region, origin_addr=None):
         """
@@ -440,7 +440,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_express.json' if argv[3] == 'flow' else '.\\testcase\\order_express1.json')
-    def test_order_express(self, phone, receive_phone, origin_region_index, origin_region, origin_addr, des_region_index,
+    def test_order_express(self, phone, receive_name, receive_phone, origin_region_index, origin_region, origin_addr, des_region_index,
                            des_addr, date, t_time, flow):
         assert_dict = {}
         assert_dict["phone"] = phone
@@ -448,7 +448,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["date_time"] = utils.get_time(date, t_time)
         self.getUserInfo(phone)
         self.selectOrderType('小件快递')
-        self.input_receive_phone(receive_phone)
+        self.input_receive_phone(receive_name, receive_phone)
         self.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.selectInterDestination(des_region_index, des_addr)
         self.selectDate(date, t_time)
@@ -483,7 +483,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         self.selectOrderType('市内用车')
         self.input_customer_phone(by_phone)
         self.orderInnerCity(origin_region_index, origin_region, origin_addr, des_addr)
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#car-types-div')), '没有相应车型或价格')
+        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#car-types-div')), '没有相应车型或价格')
         car_type_xpath = '//div/label[text()="' + car_type + '"]'
         self.driver.find_element(By.XPATH, car_type_xpath).click()
         self.selectDate('', t_time)
@@ -515,7 +515,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["date_time"] = utils.get_time(date, time)
         self.getUserInfo(phone)
         self.selectOrderType('多日包车')
-        self.input_receive_phone(by_phone)
+        self.driver.execute_script('$("#receiveTel").val("' + by_phone + '")')
         self.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.selectInterDestination(des_region_index, des_addr)
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#charterDays')))
@@ -609,7 +609,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["date_time"] = utils.get_time("", "")
         self.getUserInfo(phone)
         self.selectOrderType('代驾')
-        self.input_receive_phone(receive_phone)
+        self.driver.execute_script('$("#receiveTel").val("' + receive_phone + '")')
         self.orderHelpDrive(city, origin_addr, des_addr)
         self.commit()
         if flow == 'T':
