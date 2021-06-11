@@ -27,6 +27,14 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
             cls.input_center_line("厦门运营中心", "XMC", "361000", "XM", "361000")
         else:
             cls.input_center_line("漳州运营中心", "XMC", "361000", "XM", "361000")
+        cls.__name__ = cls.__name__ + "（城际调度中心：指派拼车、包车、货件，补单拼车、货件、快线，发车功能，运营中心订单可视权限）"
+
+    @classmethod
+    def setup_oc(cls):
+        cls.driver = globalvar.get_value('driver')
+        utils.switch_frame(cls.driver, '监控管理', '城际调度中心', 'orderCenterNew.do')
+        globalvar.opened_window_pool.append('orderCenterNew.do')
+        cls.input_center_line("物流中心", "XMC", "361000", "XM", "361000")
 
     @classmethod
     def input_center_line(cls, center, origin, ori_value, destination, des_value):
@@ -281,6 +289,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
     def test_depart(self, index):
         depart_drivers = list(filter(lambda x: x.driver_type == DriverType.NET_DRIVER and x.oc_center in self.current_oc_center, globalvar.driver_pool))
         self.driver.find_element_by_css_selector('#driverList').click()
+#        self.driver.execute_script('$("tbody#tdy_driver_queue").html("")')
         self.driver.find_element_by_css_selector('div.bbx-orderlist-nav>.nav-right.td-opera>a[title="专车排班"]').click()
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody#tdy_driver_queue>tr')))
         utils.select_operation_by_attr(self.driver, '#intercityDriver>table', '#intercityDriver>table>tbody>tr', 'driver-id', depart_drivers[index-1].driver_id, '发车')

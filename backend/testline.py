@@ -19,6 +19,7 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '人员车辆管理', '线路管理', 'line.do')
         globalvar.opened_window_pool.append('line.do')
+        cls.__name__ = cls.__name__ + "（线路管理：线路开关量【启用/关闭、上线/下线、上车确认...】设置，安全号码、手续费、线路车型...设置）"
 
     test_toggle = ['361000_to_362300', '关闭', '下线', '开启乘客上车确认'], ['361000_to_362300', '启用', '上线', '关闭乘客上车确认']
     prod_toggle = ['361000_to_361000', '关闭', '下线', '开启乘客上车确认'], ['361000_to_361000', '启用', '上线', '关闭乘客上车确认']

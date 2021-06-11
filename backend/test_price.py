@@ -22,6 +22,7 @@ class TestPrice(unittest.TestCase, metaclass=TestMeta):
         cls.driver = globalvar.get_value('driver')
         cls.temp_order_pool = globalvar.order_pool
         globalvar.order_pool.clear()
+        cls.__name__ = cls.__name__ + "（价格相关：修改价格）"
 
     @classmethod
     def tearDownClass(cls):

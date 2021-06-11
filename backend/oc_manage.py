@@ -13,10 +13,10 @@ restore_flag = False
 
 def share_setup(driver, share_src, share_to, flag=True):
     global restore_flag
-    we_oc_name = WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#ocName')))
+    we_oc_name = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#ocName')))
     we_oc_name.clear()
     we_oc_name.send_keys(share_src)
-#    driver.find_element_by_css_selector('#btnQuery').click()
+    driver.execute_script('$("#datalist>table#data_table>tbody").html("")')
     driver.execute_script('$("#btnQuery").click()')
     WebDriverWait(driver, 5).until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, '#datalist>table#data_table>tbody>tr')))
@@ -43,7 +43,7 @@ def share_setup(driver, share_src, share_to, flag=True):
             restore_flag = False
     driver.find_element_by_css_selector('#btnSave').click()
     driver.switch_to.parent_frame()
-    sleep(1)
+    sleep(2)
 
 
 def restore(driver, share_src, share_to):

@@ -72,7 +72,7 @@ if __name__ == '__main__':
         suite_all = unittest.TestSuite()
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestDriverReport))
-        
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterCenter))
@@ -104,8 +104,8 @@ if __name__ == '__main__':
             recv_list = recv_str.split(',')
             send_mail = SendEmail(
                 recv=recv_list,
-                title='业务后台自动化测试报告',
-                content='Hi,\r\n\r\n    业务后台自动化测试报告邮件，请查阅！',
+                title=f'业务后台{envir_str}自动化测试报告',
+                content=f'Hi,\r\n\r\n    业务后台{envir_str}自动化测试报告邮件，请查阅！',
                 file=file_path,
                 ssl=True,
             )

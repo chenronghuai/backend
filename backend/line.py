@@ -428,17 +428,20 @@ def setSafePhone(driver, province='福建省', city='厦门市', flag=True):
         Select(province_sel).select_by_visible_text('请选择省份')
         Select(city_sel).select_by_visible_text('请选择城市')
 
-    driver.find_element_by_css_selector('#btnSecSave').click()
+#    driver.find_element_by_css_selector('#btnSecSave').click()
+    driver.execute_script("$('#btnSecSave').click()")
     driver.switch_to.parent_frame()
     WebDriverWait(driver, 5).until(
         EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
     WebDriverWait(driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+    sleep(1.5)
 
 
 def getSafePhone(driver):
     WebDriverWait(driver, 5).until(
         EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
     safe_dict = {}
+    sleep(1)
     issafe_text = driver.execute_script("return $('#isSafeNumber').val()")
     province_text = driver.execute_script("return $('#bakProvince').val()")
     city_text = driver.execute_script("return $('#bakCity').val()")

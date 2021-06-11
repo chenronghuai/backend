@@ -29,6 +29,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '客户来电', 'customerCall.do')
         globalvar.opened_window_pool.append('customerCall.do')
+        cls.__name__ = cls.__name__ + "（客户来电下单：城际拼车、城际包车、小件快递、市内用车、多日包车、快线【新增班次】、代驾）"
 
     def getUserInfo(self, phone):
         self.driver.execute_script("$('#userTypeDiv').html('')")
@@ -117,7 +118,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         if argv[1] != 'STAGE':
             sleep(0.5)
         else:
-            sleep(2)  # 灰度环境响应慢，需要等待更长时间
+            sleep(3.5)  # 灰度环境响应慢，需要等待更长时间
 
     def selectInterDestination(self, des_region_index, des_addr):
         """

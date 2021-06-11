@@ -25,6 +25,7 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
         utils.input_ori_des(cls.driver, "XMC", "361000", "XM", "361000")
 #        cls.input_customer_phone(14759250515)
         WebDriverWait(cls.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
+        cls.__name__ = cls.__name__ + "（网约订单管理：订单上车、下车、现金等操作）"
 
     @classmethod
     def input_customer_phone(cls, phone):

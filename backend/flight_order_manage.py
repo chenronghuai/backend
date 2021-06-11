@@ -23,6 +23,7 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '班线管理', '班线订单管理', 'flightsOrderManager.do')
         globalvar.opened_window_pool.append('flightsOrderManager.do')
+        cls.__name__ = cls.__name__ + "（快线订单管理：快线订单检票、完单等操作）"
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(1, 2, 3)

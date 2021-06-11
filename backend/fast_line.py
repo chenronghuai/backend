@@ -37,7 +37,9 @@ def add_inter_order(driver, order_id):
         WebDriverWait(driver, 60).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
         sleep(1)
+        we_des.send_keys(Keys.BACKSPACE)
         we_des.click()
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
         we_des.send_keys('XM')
         WebDriverWait(driver, 15).until(
             EC.text_to_be_present_in_element_value((By.CSS_SELECTOR, '#sel_destination'), '361000'))

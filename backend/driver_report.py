@@ -26,6 +26,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver, '监控管理', '司机报班', 'driverReport.do')
         globalvar.opened_window_pool.append('driverReport.do')
+        cls.__name__ = cls.__name__ + "（司机报班：司机通过手机号码、车牌号码进行报班，取消报班）"
 
     @classmethod
     def tearDownClass(cls):

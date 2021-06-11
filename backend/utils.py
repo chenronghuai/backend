@@ -128,7 +128,8 @@ def modify_config_value(section, name, value):
     config = configparser.ConfigParser()
     config.read(config_path, encoding='utf-8')
     config.set(section, name, value)
-    config.write(open(config_path, 'w'))
+    config.write(open(config_path, 'w', encoding='utf-8'))
+
 
 def get_path():
     """获取项目所在路径"""
@@ -250,7 +251,7 @@ def get_record_by_attr(driver, locator, attr_name, value):
             try:
                 actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
             except StaleElementReferenceException:
-                sleep(3)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低)
+                sleep(3)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低，影响较小)
                 actual_value = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
                     attr_name)
@@ -336,7 +337,7 @@ def get_opera_text(driver, opera_locator):
 
 def select_operation_by_attr(driver, table_locator, attr_locator, attr_name, value, opera_text):
     """
-
+    从列表“操作”栏点击具体的操作文本
     :param driver:
     :param table_locator: 表的css locator
     :param attr_locator: 属性的css locator

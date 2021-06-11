@@ -23,6 +23,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         cls.driver = globalvar.get_value('driver')
         utils.switch_frame(cls.driver,  '班线管理', '班次调度中心', 'flightsOrderCenter.do')
         globalvar.opened_window_pool.append('flightsOrderCenter.do')
+        cls.__name__ = cls.__name__ + "（班次调度中心：快线司机排班，指派未排班司机即排班，指派快线订单给排班司机，快线司机补网约单、快线单）"
 
     def input_center_line(self, center, line):
         WebDriverWait(self.driver, 20).until(
