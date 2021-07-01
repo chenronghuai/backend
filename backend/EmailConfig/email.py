@@ -6,8 +6,10 @@ from email.mime.multipart import MIMEMultipart
 
 
 class SendEmail(object):
-    def __init__(self, recv, title, content, username='337164910@qq.com', passwd='udmukstzplqvbidg',
-                 file=None, ssl=False, email_host='smtp.qq.com', port=25, ssl_port=465):
+#    def __init__(self, recv, title, content, username='337164910@qq.com', passwd='udmukstzplqvbidg',
+#                 file=None, ssl=False, email_host='smtp.qq.com', port=25, ssl_port=465):
+    def __init__(self, recv, title, content, username='chenrh@bbxpc.com', passwd='crhCRH123',
+                 file=None, ssl=False, email_host='smtp.exmail.qq.com', port=25, ssl_port=465):
         self.username = username
         self.passwd = passwd
         self.recv = recv

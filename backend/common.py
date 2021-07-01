@@ -18,6 +18,14 @@ class Order(object):
         self.__appoint_time = time
 
     @property
+    def order_time(self):
+        return self.__order_time
+
+    @order_time.setter
+    def order_time(self, time):
+        self.__order_time = time
+
+    @property
     def order_status(self):
         return self.__order_status
 
@@ -80,6 +88,14 @@ class Order(object):
     @car_type.setter
     def car_type(self, type_):
         self.__car_type = type_
+
+    @property
+    def order_phone(self):
+        return self.__order_phone
+
+    @order_phone.setter
+    def order_phone(self, phone_):
+        self.__order_phone = phone_
 
 
 class Driver(object):

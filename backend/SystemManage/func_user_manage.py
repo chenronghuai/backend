@@ -1,48 +1,35 @@
 import unittest
-import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from time import sleep
-from ddt import ddt, data, unpack
+from ddt import ddt
 import utils
-from utils import OrderType, DriverType, OrderStatus, FoundDriverError
 from utils import TestMeta
 import globalvar
-import oc_manage, customer_call, inter_center, order_manage, login
-from sys import argv
 from selenium.webdriver.support.select import Select
 from utils import FoundRecordError
 
 
-@ddt
-class TestUserManage(unittest.TestCase, metaclass=TestMeta):
+class FuncUserManage:
     temp_order_pool = []
 
-    @classmethod
-    def setUpClass(cls):
-        cls.driver = globalvar.get_value('driver')
-        utils.switch_frame(cls.driver, '系统管理', '用户管理', 'sysbbxuser.do')
-        globalvar.opened_window_pool.append('sysbbxuser.do')
-
-    @classmethod
-    def tearDownClass(cls):
-        pass
+    def __init__(self):
+        self.driver = globalvar.get_value('driver')
 
     def get_user_attr(self, user):
-        """"
-        获取系统用户属性
         """
-
+        获取系统用户属性
+        :param user: 用户账号名称（字符串）
+        :return:
+        """
         attr_dict = {}
-        if "sysbbxuser.do" in globalvar.opened_window_pool:
-            utils.switch_exist_frame(self.driver, "sysbbxuser.do", "用户管理")
-        else:
-            TestUserManage.setUpClass()
+        utils.make_sure_driver(self.driver, '系统管理', '用户管理', '用户管理', 'sysbbxuser.do')
 
         we_username = WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userName')))
         we_username.clear()
         we_username.send_keys(user)
+        self.driver.execute_script("$('table#bbxuser_table>tbody>tr').html('')")
         self.driver.find_element_by_css_selector('#btnQuery').click()
         try:
             we_tds = WebDriverWait(self.driver, 5).until(
@@ -61,11 +48,12 @@ class TestUserManage(unittest.TestCase, metaclass=TestMeta):
         return attr_dict
 
     def set_user_available(self, user):
-        if "sysbbxuser.do" in globalvar.opened_window_pool:
-            utils.switch_exist_frame(self.driver, "sysbbxuser.do", "用户管理")
-        else:
-            TestUserManage.setUpClass()
-
+        """
+        设置用户可用
+        :param user: 用户账号名称（字符串）
+        :return:
+        """
+        utils.make_sure_driver(self.driver, '系统管理', '用户管理', '用户管理', 'sysbbxuser.do')
         we_username = WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userName')))
         we_username.clear()
         we_username.send_keys(user)

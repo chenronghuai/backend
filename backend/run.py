@@ -1,4 +1,4 @@
-from driver_report import TestDriverReport
+from test_driver_report import TestDriverReport
 from pathlib import Path
 import unittest
 import HTMLTestRunner
@@ -9,16 +9,19 @@ from sys import argv
 import login
 import globalvar
 import log
-from customer_call import TestCustomerCall
-from inter_center import TestInterCenter
-from order_manage import TestOrderManage
-from flight_center import TestFlightCenter
-from flight_order_manage import TestFlightOrderManage
-from test_oc_share import TestOcShare
+from test_customer_call import TestCustomerCall
+from test_inter_center import TestInterCenter
+from test_order_manage import TestOrderManage
+from test_flight_center import TestFlightCenter
+from test_flight_order_manage import TestFlightOrderManage
+from test_permission import TestPermission
 from test_price import TestPrice
 from EmailConfig.email import SendEmail
-from flights_manage import TestFlightsManage
-from testline import TestLine
+from test_flights_manage import TestFlightsManage
+from test_line import TestLine
+from test_sms import TestSms
+from datetime import datetime
+import time
 
 
 def action_login():
@@ -27,6 +30,8 @@ def action_login():
         exit(1)
     else:
         globalvar.init()
+        globalvar.set_value('start_time',
+                            f'{time.gmtime().tm_year}-{time.gmtime().tm_mon}-{time.gmtime().tm_mday} {time.gmtime().tm_hour + 8}:{time.gmtime().tm_min}:{time.gmtime().tm_sec}')  # 用于过滤短信时间
         login.login(argv[1], argv[2])
 
 
@@ -61,7 +66,10 @@ if __name__ == '__main__':
             envir_str = '灰度环境'
         elif argv[1] == 'PROD':
             envir_str = '正式环境'
-        title = f'业务后台({envir_str})自动化测试报告'
+        my_list = now_time.split(' ')[1].split('-')
+        new_str = now_time.split(' ')[0] + ' ' + my_list[0] + ':' + my_list[1]
+        envir_str = envir_str + '【' + new_str + '】'
+        title = f'业务后台{envir_str}自动化测试报告'
 
         runner = HTMLTestRunner.HTMLTestRunner(file_result, 2, title, u"执行概况", tester='陈荣怀')
 
@@ -72,20 +80,27 @@ if __name__ == '__main__':
         suite_all = unittest.TestSuite()
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestDriverReport))
-
+        '''
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterCenter))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightCenter))
 
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestSms))
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestOrderManage))
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightOrderManage))
+
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightsManage))
+        
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestLine))
 
-        if argv[1] == 'TEST':
-            suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestOcShare))
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPermission))
+        
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPrice))
+        '''
         suite_one.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
         if argv[3] == 'auto':

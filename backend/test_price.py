@@ -9,7 +9,8 @@ import utils
 from utils import OrderType, DriverType, OrderStatus, FoundDriverError
 from utils import TestMeta
 import globalvar
-import oc_manage, customer_call, inter_center, order_manage, login
+import test_customer_call, test_inter_center, test_order_manage, login
+from MonitorManage.func_customer_call import FuncCustomerCall
 from sys import argv
 
 
@@ -31,11 +32,8 @@ class TestPrice(unittest.TestCase, metaclass=TestMeta):
     @data('3.3',)
     def test_modify_price(self, price):
         try:
-            if 'customerCall.do' in globalvar.opened_window_pool:
-                utils.switch_exist_frame(self.driver,  'customerCall.do', '客户')
-            else:
-                customer_call.TestCustomerCall.setUpClass()
-            cu = customer_call.TestCustomerCall()
+            utils.make_sure_driver(self.driver, '监控管理', '客户来电', '客户', 'customerCall.do')
+            cu = FuncCustomerCall()
             sleep(1)
             cu.getUserInfo("66666663")
             cu.selectOrderType('城际拼车')

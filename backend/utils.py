@@ -8,6 +8,7 @@ import random
 import globalvar
 import log
 from sys import argv
+from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -225,17 +226,15 @@ def get_cell_content(driver, table_selector, row, column):
     :param column: 单元格的列
     :return: 返回单元格数据
     """
-    try:
-        table_loc = driver.find_element_by_css_selector(table_selector)
-        cell_selector = 'tbody > tr:nth-child({0}) > td:nth-child({1})'.format(row, column)  # 经验证，不管是1条还是多条记录，该定位语句都没有问题
-    except Exception as msg:  # 异常处理是否合理？
-        print(msg)
+    table_loc = driver.find_element_by_css_selector(table_selector)
+    cell_selector = 'tbody > tr:nth-child({0}) > td:nth-child({1})'.format(row, column)  # 经验证，不管是1条还是多条记录，该定位语句都没有问题
+
     return table_loc.find_element_by_css_selector(cell_selector).text
 
 
 def get_record_by_attr(driver, locator, attr_name, value):
     """
-
+    通过记录属性值查询记录在表中的位置
     :param driver:
     :param locator: 元素的CSS locator
     :param attr_name: 字符串，属性的名称
@@ -249,16 +248,16 @@ def get_record_by_attr(driver, locator, attr_name, value):
         for i in range(len(records)):
             # 下面try模块的目的，为了规避DOM为空的情形
             try:
-                actual_value = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
+                actual_value = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
             except StaleElementReferenceException:
-                sleep(3)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低，影响较小)
-                actual_value = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
+#                sleep(3)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低，影响较小)
+                actual_value = WebDriverWait(driver, 30).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
                     attr_name)
             if actual_value == value:
                 return locator + ':nth-child({})'.format(i + 1)
             elif actual_value != value and i == len(records) - 1:
-                log.logger.info(f'{locator}列表里找不到{attr_name}={value}的记录')
+                log.logger.info(f'找不到记录：目标值={value},最后一条记录取值={actual_value}')
                 raise FoundRecordError(value, locator)
     else:
         log.logger.warning(f'该定位下({locator})没有找到任何记录')
@@ -407,6 +406,14 @@ def convert_to_minute(t):
     return int(t_t[0])*60 + int(t_t[1])
 
 
+def normal_to_datetime(src):
+    assert isinstance(src, str)
+    dt_list = src.split(' ')
+    date_list = dt_list[0].split('-')
+    time_list = dt_list[1].split(':')
+    return datetime(int(date_list[0]), int(date_list[1]), int(date_list[2]), int(time_list[0]), int(time_list[1]), int(time_list[2]))
+
+
 def input_ori_des(driver,  origin, ori_value, destination, des_value):
     try:
         we_ori = WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName')))
@@ -424,8 +431,8 @@ def input_ori_des(driver,  origin, ori_value, destination, des_value):
         return '输入起点方位错误'
 
     try:
-        if argv[1] == 'STAGE':
-            sleep(5)  # 灰度环境增加等待时间
+        if argv[1] != 'TEST':
+            sleep(5)  # 非测试环境增加等待时间
         we_des = driver.find_element_by_css_selector('#endsName')
         we_des.clear()
         WebDriverWait(driver, 15).until(
@@ -457,6 +464,22 @@ def generate_password():
         s += t
     return s
 
+
+def make_sure_driver(driver, mother_menu, child_menu, title, src_link):
+    """
+    确保当前的webdriver有效，用于功能函数的开始
+    :param driver: webdriver
+    :param mother_menu: 母菜单（字符串）
+    :param child_menu: 子菜单（字符串）
+    :param title: 窗口标题（字符串）
+    :param src_link: iframe属性src的字串（字符串）
+    :return:
+    """
+    if src_link in globalvar.opened_window_pool:
+        switch_exist_frame(driver, src_link, title)
+    else:
+        switch_frame(driver, mother_menu, child_menu, src_link)
+        globalvar.opened_window_pool.append(src_link)
 
 class TestMeta(type):
     """
