@@ -42,7 +42,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         for order in globalvar.order_pool:
             utils.select_operation_by_attr(cls.driver, '#callOrderPage>table', '#callOrderPage>table>tbody>tr',
                                            'order-id', order.order_id, '消单')
-            utils.cancel_order(cls.driver, '联系不上司机')
+            utils.cancel_order(cls.driver, '联系不上司机', 'customerCall.do')
 
         globalvar.order_pool = cls.temp_order_pool
 
@@ -55,12 +55,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         try:
             om.share_setup(share_src, share_to, share_flag)
             utils.make_sure_driver(self.driver, '监控管理', '客户来电', '客户', 'customerCall.do')
-            '''
-            if 'customerCall.do' in globalvar.opened_window_pool:
-                utils.switch_exist_frame(om.driver,  'customerCall.do', '客户')
-            else:
-                test_customer_call.TestCustomerCall.setUpClass()
-            '''
+
             cu = FuncCustomerCall()
             sleep(1)
             cu.getUserInfo("66666663")
@@ -117,7 +112,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         # 切回运营中心页面
         utils.switch_exist_frame(globalvar.get_value('driver'), 'operations-center.do', '运营中心管理')
         temp_driver = globalvar.get_value('driver')
-        new_driver = login.login('TEST', user)
+        new_driver = login.login('TEST', user, main_flag=False)
         try:
             om.share_setup('厦门运营中心', '物流中心', flag)
             utils.switch_frame(new_driver, '监控管理', '订单管理', 'orderManage.do')

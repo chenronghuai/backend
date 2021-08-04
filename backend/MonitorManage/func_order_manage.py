@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 import utils
 from utils import OrderType
 import globalvar
+import log
 
 
 class FuncOrderManage:
@@ -22,11 +23,16 @@ class FuncOrderManage:
         self.driver.find_element_by_css_selector('#phone').send_keys(phone)
         self.driver.find_element_by_css_selector('#moreSpan').click()
 
-    def operate_dialog(self, driver, button_css_locator, iframe_src, operator_css_locator):
-        WebDriverWait(driver, 15).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, button_css_locator))).click()
-        WebDriverWait(driver, 15).until(
+    def operate_dialog(self, button_css_locator, iframe_src, operator_css_locator):
+
+        WebDriverWait(self.driver, 15).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, button_css_locator))).click()
+        WebDriverWait(self.driver, 15).until(
             EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, iframe_src)))
-        WebDriverWait(driver, 15).until(
+        WebDriverWait(self.driver, 15).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, operator_css_locator))).click()
-        driver.switch_to.parent_frame()
+        operate_result_text = utils.wait_for_laymsg(self.driver)
+#        self.driver.switch_to.parent_frame()  # 该语句不生效，是否因为该iframe已经不在DOM？
+        utils.make_sure_driver(self.driver, '监控管理', '订单管理', '订单管理', 'orderManage.do')
+        return operate_result_text
+        

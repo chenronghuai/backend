@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import globalvar
 
 
-def login(url_section, user_section):
+def login(url_section, user_section, main_flag=True):
     """
     :param url: 目标url,读取config.ini的http section
     :param user: 用户信息,读取config.ini的user section
@@ -69,7 +69,9 @@ def login(url_section, user_section):
 
         except ValueError:
             log.logger.critical('用户名或密码错误')
-            exit(2)
+            if main_flag:
+                exit(2)
+            break
 
         except NoSuchElementException:
             break

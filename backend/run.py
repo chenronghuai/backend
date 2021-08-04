@@ -20,7 +20,7 @@ from EmailConfig.email import SendEmail
 from test_flights_manage import TestFlightsManage
 from test_line import TestLine
 from test_sms import TestSms
-from datetime import datetime
+from time import localtime
 import time
 
 
@@ -31,7 +31,7 @@ def action_login():
     else:
         globalvar.init()
         globalvar.set_value('start_time',
-                            f'{time.gmtime().tm_year}-{time.gmtime().tm_mon}-{time.gmtime().tm_mday} {time.gmtime().tm_hour + 8}:{time.gmtime().tm_min}:{time.gmtime().tm_sec}')  # 用于过滤短信时间
+                            f'{localtime(time.time()).tm_year}-{localtime(time.time()).tm_mon}-{localtime(time.time()).tm_mday} {localtime(time.time()).tm_hour}:{localtime(time.time()).tm_min}:{localtime(time.time()).tm_sec}')  # 用于过滤短信时间
         login.login(argv[1], argv[2])
 
 
@@ -80,29 +80,27 @@ if __name__ == '__main__':
         suite_all = unittest.TestSuite()
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestDriverReport))
-        '''
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterCenter))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightCenter))
 
-        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestSms))
-
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestOrderManage))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightOrderManage))
 
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestSms))
+        '''
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightsManage))
-        
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestLine))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPermission))
         
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPrice))
         '''
-        suite_one.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
-
         if argv[3] == 'auto':
             runner.run(suite_one)
         elif argv[3] == 'flow':

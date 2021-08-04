@@ -23,5 +23,7 @@ class FuncFlightsManage:
         self.driver.find_element_by_css_selector('#flightsDate').send_keys(depart_date)
         self.driver.find_element_by_css_selector('#flightsDispatchedTime').send_keys(depart_time)
         self.driver.find_element_by_css_selector('#btnSave').click()
+        msg_text = utils.wait_for_laymsg(self.driver)
         WebDriverWait(self.driver, 5).until_not(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe[src^="/flights.do?method=editLineFlights"]')))
+        return msg_text

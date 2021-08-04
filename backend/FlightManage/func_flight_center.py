@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from time import sleep
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 from common import Driver
 import log
 
@@ -77,7 +77,7 @@ class FuncFlightCenter:
             self.driver.find_element_by_css_selector('#phone1').send_keys(driver_phone)
             self.driver.find_element_by_css_selector('#btnQuery').click()
             WebDriverWait(self.driver, 5).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#driver_table>tbody>tr')))  # 无效
+                EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#driver_table>tbody>tr')))  # 没有匹配司机该locator也会存在-“暂无数据！”
             td_count = self.driver.find_elements_by_css_selector('table#driver_table>tbody>tr>td')
             if len(td_count) == 1:
                 self.driver.find_element_by_css_selector('#btnEsc').click()
@@ -90,18 +90,24 @@ class FuncFlightCenter:
             self.driver.switch_to.parent_frame()
             WebDriverWait(self.driver, 15).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#driver-lists>tr')))
-            # 添加司机进池
+            # 收集司机信息
             driver_id = self.driver.find_element_by_css_selector('tbody#driver-lists>tr').get_attribute('driver_id')
             max_user = int(
                 self.driver.find_element_by_css_selector('tbody#driver-lists>tr').get_attribute('max_passenger'))
             max_package = 0
             car_type = self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(5)').text
+            register_phone = self.driver.find_element_by_css_selector('tbody>tr>td:nth-child(3)').text
             oc_center = '漳州运营中心'
-            driver = Driver(driver_id, max_user, max_package, car_type, oc_center,
+            driver = Driver(driver_id, max_user, max_package, car_type, oc_center, register_phone, contact_phone=register_phone, 
                             driver_type=DriverType.BUS_DRIVER)
-            globalvar.add_driver(driver)
 
             self.driver.find_element_by_css_selector('#btnSave').click()
+            msg_text = utils.wait_for_laymsg(self.driver)
+            if 'success' in msg_text:
+                globalvar.add_driver(driver)
+            else:
+                log.logger.error(f'司机班次报班失败，msg={msg_text}')
+                assert False
             self.driver.switch_to.parent_frame()
         finally:
             self.driver.switch_to.default_content()
@@ -126,7 +132,7 @@ class FuncFlightCenter:
         tip_text = WebDriverWait(self.driver, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'span.dispatch-tip-info'))).text
         if tip_text == '新增司机排班':
-            # 添加司机进池
+            # 收集司机信息
             self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR,
                                                                  'iframe[src^="/flightsOrderCenter.do?method=toAssignOrChangeOrder"]'))
             driver_id = self.driver.find_element_by_css_selector('tbody#driver-schedule-list>tr').get_attribute(
@@ -136,11 +142,19 @@ class FuncFlightCenter:
             max_package = 0
             car_type = '网约车/5座/舒适型'
             oc_center = '漳州运营中心'
-            driver = Driver(driver_id, max_user, max_package, car_type, oc_center,
+            driver_ = Driver(driver_id, max_user, max_package, car_type, oc_center, None, None,
                             driver_type=DriverType.BUS_DRIVER)
-            globalvar.add_driver(driver)
+            setattr(self, 'new_driver', driver_)
+            setattr(self, 'new_driver_flag', True)
             self.driver.switch_to.parent_frame()
         self.driver.find_element_by_css_selector('div>a.layui-layer-btn0').click()
+        msg_text = utils.wait_for_laymsg(self.driver)
+        if '操作成功' in msg_text:
+            if getattr(self, 'new_driver_flag'):
+                globalvar.add_driver(getattr(self, 'new_driver'))
+        else:
+            log.logger.error(f'指派班线订单失败，msg={msg_text}')
+            assert False
         sleep(3)
 
     def add_inter_order(self, order_id):
@@ -198,12 +212,28 @@ class FuncFlightCenter:
                     self.driver.find_element_by_css_selector(expect_css).click()
                     sleep(1)
                     self.driver.find_element_by_css_selector('#orderAddBtn').click()
+
+                    try:
+                        msg_text = WebDriverWait(self.driver, 3).until(
+                            EC.presence_of_element_located(
+                                (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                        setattr(self, 'add_result_text', msg_text)
+                    except:
+                        pass
+
                     self.driver.switch_to.parent_frame()
                     sleep(1)
                     try:
                         WebDriverWait(self.driver, 1).until(
                             EC.visibility_of_element_located(
                                 (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn->a.layui-layer-btn0'))).click()
+                        try:
+                            msg_text = WebDriverWait(self.driver, 5).until(
+                                EC.presence_of_element_located(
+                                    (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                            setattr(self, 'add_result_text', msg_text)
+                        except:
+                            pass
                     except:
                         pass
                     self.driver.switch_to.frame(
@@ -264,10 +294,16 @@ class FuncFlightCenter:
                     self.driver.find_element_by_css_selector(expect_css).click()
                     sleep(1)
                     self.driver.find_element_by_css_selector('#orderAddBtn').click()
+                    msg_text = utils.wait_for_laymsg(self.driver)
+                    if '补单操作成功!' not in msg_text:
+                        log.logger.error(f'补班线订单失败，msg={msg_text}')
+                        assert False
                     break
             self.driver.find_element_by_css_selector('#closeBtn').click()
         except TimeoutException:
             self.driver.find_element_by_css_selector('#closeBtn').click()
+            log.logger.error(f'补班线订单页面超时错误')
+            assert False
         finally:
             sleep(1)
             self.driver.switch_to.parent_frame()
@@ -300,22 +336,27 @@ class FuncFlightCenter:
 
         WebDriverWait(self.driver, 15).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#driverList'))).click()
         WebDriverWait(self.driver, 15).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercityDriver>table>#tdy_driver_queue>tr')))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercityDriver>table>#tdy_driver_queue>tr[page_type="driver_queue"]')))
         info_text = self.driver.find_element_by_css_selector('#intercityDriver>#pagebar>p').text
         page_num = int(re.search(r'.+/(.+)', info_text).group(1))
         for i in range(page_num):
             reported_driver_records = WebDriverWait(self.driver, 15).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercityDriver>table>#tdy_driver_queue> tr')))
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercityDriver>table>#tdy_driver_queue> tr[page_type="driver_queue"]')))
             for index, record in enumerate(reported_driver_records):
-                flight_no_css = f'div#intercityDriver>table>tbody#tdy_driver_queue>tr:nth-child({index + 1})>td:nth-child(2)'
-                flight_no = WebDriverWait(self.driver, 15).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, flight_no_css))).text
-                record_driver_id = WebDriverWait(self.driver, 15).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR,
-                                                    f'#intercityDriver>table>#tdy_driver_queue > tr:nth-child({index + 1}'))).get_attribute(
-                    'driver_id')  # 确保不会碰到系统刷新导致瞬间DOM为空
+                flight_no_css = f'div#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]:nth-child({index + 1})>td:nth-child(2)'
+                try:
+                    flight_no = WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, flight_no_css))).text
+                    record_driver_id = WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, f'#intercityDriver>table>#tdy_driver_queue > tr[page_type="driver_queue"]:nth-child({index + 1}'))).get_attribute('driver_id')
+                except StaleElementReferenceException:
+                    flight_no = WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, flight_no_css))).text
+                    record_driver_id = WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR,
+                                                        f'#intercityDriver>table>#tdy_driver_queue > tr[page_type="driver_queue"]:nth-child({index + 1}'))).get_attribute('driver_id')
                 if record_driver_id == driver_.driver_id and flight_no == globalvar.get_value('FlightNo'):
-                    driver_css = f'div#intercityDriver>table>tbody#tdy_driver_queue>tr:nth-child({index + 1})'
+                    driver_css = f'div#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]:nth-child({index + 1})'
                     return driver_css
             self.driver.execute_script("$('#pagebar>a.next').click()")
             sleep(1)

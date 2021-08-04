@@ -429,9 +429,9 @@ class FuncLine:
     #    driver.find_element_by_css_selector('#btnSecSave').click()
         self.driver.execute_script("$('#btnSecSave').click()")
         self.driver.switch_to.parent_frame()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(self.driver, 10).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+        WebDriverWait(self.driver, 10).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         sleep(1.5)
 
     def getSafePhone(self):
@@ -467,6 +467,7 @@ class FuncLine:
                 continue
 
             utils.select_operation_by_attr(self.driver, '#line_table', '#line_table>tbody>tr', 'data-line-id', line_id, v)
+            self.driver.execute_script("$('#line_table>tbody').html('')")
             if v in ['关闭', '启用', '下线', '上线', '设为人民币', '设为港币']:
                 self.driver.switch_to.default_content()
                 WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
@@ -477,7 +478,7 @@ class FuncLine:
             else:
                 sleep(1.5)
 
-        we_tds = self.driver.find_elements_by_css_selector('#line_table>tbody>tr>td')
+        we_tds = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#line_table>tbody>tr>td')))
         for element in we_tds:
             line_info_list.append(element.text)
         return line_info_list

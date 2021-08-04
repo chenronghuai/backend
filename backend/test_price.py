@@ -61,4 +61,4 @@ class TestPrice(unittest.TestCase, metaclass=TestMeta):
         finally:
             utils.select_operation_by_attr(self.driver, '#callOrderPage>table', '#callOrderPage>table>tbody>tr',
                                            'order-id', globalvar.order_pool[0].order_id, '消单')
-            utils.cancel_order(self.driver, '联系不上司机')
+            utils.cancel_order(self.driver, '联系不上司机', 'customerCall.do')

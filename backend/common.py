@@ -31,7 +31,7 @@ class Order(object):
 
     @order_status.setter
     def order_status(self, status):
-        self.__order_status = status
+        self.__order_status =status
 
     @property
     def order_origin(self):
@@ -99,12 +99,14 @@ class Order(object):
 
 
 class Driver(object):
-    def __init__(self, id, max_user, max_package, car_type, oc_center, driver_type=utils.DriverType.NET_DRIVER):
+    def __init__(self, id, max_user, max_package, car_type, oc_center, register_phone, contact_phone, driver_type=utils.DriverType.NET_DRIVER):
         self.__driver_id = id
         self.__max_user = max_user
         self.__max_package = max_package
         self.__car_type = car_type
         self.__oc_center = oc_center
+        self.__register_phone = register_phone
+        self.__contact_phone = contact_phone
         self.__driver_type = driver_type
         self.__appoint_user_count = 0
         self.__appoint_package_count = 0
@@ -161,4 +163,20 @@ class Driver(object):
     @driver_type.setter
     def driver_type(self, _type):
         self.__driver_type = _type
+
+    @property
+    def register_phone(self):
+        return self.__register_phone
+
+    @register_phone.setter
+    def register_phone(self, _register_phone):
+        self.__register_phone = _register_phone
+
+    @property
+    def contact_phone(self):
+        return self.__contact_phone
+
+    @contact_phone.setter
+    def contact_phone(self, _contact_phone):
+        self.__contact_phone = _contact_phone
 

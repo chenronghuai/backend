@@ -10,6 +10,7 @@ from utils import TestMeta
 import globalvar
 from sys import argv
 from MonitorManage.func_customer_call import FuncCustomerCall
+import log
 
 
 count = 1
@@ -34,25 +35,31 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["date_time"] = utils.get_time(date, time)
         assert_dict["count"] = count
         self.cc.getUserInfo(phone)
+#        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         self.cc.selectOrderType('城际拼车')
         self.cc.input_customer_phone(by_phone)
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
         self.cc.selectDate(date, time)
         self.cc.selectPCount(count)
-        self.cc.commit()
-        if flow == 'T':
-            i = self.cc.checkitem(assert_dict["order_type"])
-            self.cc.save_order(i, OrderType.CARPOOLING)
-            rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
-            l1_date = str(rs_date).split(' ')
-            l2_date = str(assert_dict['date_time']).split(' ')
-            self.assertEqual(l1_date[0], l2_date[0])
-            self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
-            rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
-            self.assertEqual(assert_dict['order_type'], rs_type)
-            rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
-            self.assertEqual(assert_dict['count'], rs_count)
+        msg_text = self.cc.commit()
+        if '提交订单成功!' in msg_text:
+            if flow == 'T':
+                i = self.cc.checkitem(assert_dict["order_type"])
+                self.cc.save_order(i, OrderType.CARPOOLING)
+                rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
+                l1_date = str(rs_date).split(' ')
+                l2_date = str(assert_dict['date_time']).split(' ')
+                self.assertEqual(l1_date[0], l2_date[0])
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
+                self.assertEqual(assert_dict['order_type'], rs_type)
+                rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
+                self.assertEqual(assert_dict['count'], rs_count)
+        else:
+            log.logger.debug(f'拼车订单下单失败，msg={msg_text}')
+            assert False
+
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_character.json' if argv[3] == 'flow' else '.\\testcase\\order_character1.json')
@@ -63,25 +70,30 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["order_type"] = "包车"
         assert_dict["date_time"] = utils.get_time(date, time)
         self.cc.getUserInfo(phone)
+#        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         self.cc.selectOrderType('城际包车')
         self.cc.input_customer_phone(by_phone)
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
         self.cc.selectCarType(car_type)
         self.cc.selectDate(date, time)
-        self.cc.commit()
-        if flow == 'T':
-            i = self.cc.checkitem(assert_dict["order_type"])
-            self.cc.save_order(i, OrderType.CHARACTER, car_type=car_type)
-            rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
-            l1_date = str(rs_date).split(' ')
-            l2_date = str(assert_dict['date_time']).split(' ')
-            self.assertEqual(l1_date[0], l2_date[0])
-            self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
-            rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
-            self.assertEqual(assert_dict['order_type'], rs_type)
-            rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
-            self.assertEqual(1, rs_count)
+        msg_text = self.cc.commit()
+        if '提交订单成功!' in msg_text:
+            if flow == 'T':
+                i = self.cc.checkitem(assert_dict["order_type"])
+                self.cc.save_order(i, OrderType.CHARACTER, car_type=car_type)
+                rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
+                l1_date = str(rs_date).split(' ')
+                l2_date = str(assert_dict['date_time']).split(' ')
+                self.assertEqual(l1_date[0], l2_date[0])
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
+                self.assertEqual(assert_dict['order_type'], rs_type)
+                rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
+                self.assertEqual(1, rs_count)
+        else:
+            log.logger.debug(f'包车订单下单失败，msg={msg_text}')
+            assert False
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_express.json' if argv[3] == 'flow' else '.\\testcase\\order_express1.json')
@@ -92,24 +104,29 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["order_type"] = "货件"
         assert_dict["date_time"] = utils.get_time(date, t_time)
         self.cc.getUserInfo(phone)
+#        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         self.cc.selectOrderType('小件快递')
         self.cc.input_receive_phone(receive_name, receive_phone)
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
         self.cc.selectDate(date, t_time)
-        self.cc.commit()
-        if flow == 'T':
-            i = self.cc.checkitem(assert_dict["order_type"])
-            self.cc.save_order(i, OrderType.EXPRESS)
-            rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
-            l1_date = str(rs_date).split(' ')
-            l2_date = str(assert_dict['date_time']).split(' ')
-            self.assertEqual(l1_date[0], l2_date[0])
-            self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
-            rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
-            self.assertEqual(assert_dict['order_type'], rs_type)
-            rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
-            self.assertEqual(1, rs_count)
+        msg_text = self.cc.commit()
+        if '提交订单成功!' in msg_text:
+            if flow == 'T':
+                i = self.cc.checkitem(assert_dict["order_type"])
+                self.cc.save_order(i, OrderType.EXPRESS)
+                rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
+                l1_date = str(rs_date).split(' ')
+                l2_date = str(assert_dict['date_time']).split(' ')
+                self.assertEqual(l1_date[0], l2_date[0])
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
+                self.assertEqual(assert_dict['order_type'], rs_type)
+                rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
+                self.assertEqual(1, rs_count)
+        else:
+            log.logger.debug(f'小件订单下单失败，msg={msg_text}')
+            assert False
 
 
     test_case = ["14759250515", "5603293", "XM", "厦门市|XMSmm", "软件园二期", "软件园观日路24号", "商务七座/7座/豪华型", "", "T"],
@@ -125,6 +142,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["order_type"] = "市内叫车"
         assert_dict["by_phone"] = by_phone if by_phone != "" else phone
         self.cc.getUserInfo(phone)
+#        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         self.cc.selectOrderType('市内用车')
         self.cc.input_customer_phone(by_phone)
         self.cc.orderInnerCity(origin_region_index, origin_region, origin_addr, des_addr)
@@ -135,21 +153,26 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
 #        sleep(1)
 #        self.driver.find_element(By.XPATH, '//div/label[text()="一口价（元）"]').click()
         WebDriverWait(self.cc.driver, 15).until((EC.element_to_be_clickable((By.XPATH, '//div/label[text()="一口价（元）"]')))).click()
-        self.cc.commit(pricetip_flag=False)
+        sleep(1.5)  # 等待，使得下单各要素齐全，否则无法提交成功
+        msg_text = self.cc.commit(pricetip_flag=False)
 
-        i = self.cc.checkitem(assert_dict["order_type"])
-        if flow == 'T':
-            self.cc.save_order(i, OrderType.INNER)
-        assert_dict["date_time"] = utils.get_time('', t_time)
-        rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
-        l1_date = str(rs_date).split(' ')
-        l2_date = str(assert_dict['date_time']).split(' ')
-        self.assertEqual(l1_date[0], l2_date[0])
-        self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
-        rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
-        self.assertEqual(assert_dict['order_type'], rs_type)
-        rs_byphone = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 4)
-        self.assertEqual(assert_dict['by_phone'], rs_byphone)
+        if '提交订单成功!' in msg_text:
+            i = self.cc.checkitem(assert_dict["order_type"])
+            if flow == 'T':
+                self.cc.save_order(i, OrderType.INNER)
+            assert_dict["date_time"] = utils.get_time('', t_time)
+            rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
+            l1_date = str(rs_date).split(' ')
+            l2_date = str(assert_dict['date_time']).split(' ')
+            self.assertEqual(l1_date[0], l2_date[0])
+            self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+            rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
+            self.assertEqual(assert_dict['order_type'], rs_type)
+            rs_byphone = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 4)
+            self.assertEqual(assert_dict['by_phone'], rs_byphone)
+        else:
+            log.logger.debug(f'市内订单下单失败，msg={msg_text}')
+            assert False
 
     @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'TEST', '非流程或测试环境不跑')
     @file_data('.\\testcase\\order_dayscharter.json')
@@ -160,30 +183,37 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["order_type"] = "多日包车(" + str(time_long) + "天)"
         assert_dict["date_time"] = utils.get_time(date, time)
         self.cc.getUserInfo(phone)
+#        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         self.cc.selectOrderType('多日包车')
         self.cc.driver.execute_script('$("#receiveTel").val("' + by_phone + '")')
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
         WebDriverWait(self.cc.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#charterDays')))
         self.cc.selectCarType(car_type)
+        self.cc.driver.execute_script("$('#price').val('')")  # 7.14 add
         self.cc.select_time_long('charterDays', time_long)
         self.cc.selectDate(date, time)
-        self.cc.commit()
-        if flow == 'T':
-            i = self.cc.checkitem(assert_dict["order_type"])
-            self.cc.save_order(i, OrderType.DAYSCHARACTER, car_type=car_type)
-            rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
-            l1_date = str(rs_date).split(' ')
-            l2_date = str(assert_dict['date_time']).split(' ')
-            self.assertEqual(l1_date[0], l2_date[0])
-            self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
-            rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
-            self.assertEqual(assert_dict['order_type'], rs_type)
-            rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
-            self.assertEqual(1, rs_count)
+        WebDriverWait(self.cc.driver, 10).until(lambda x: x.execute_script("return $('#price').val()") != '')  # 7.14 add，js提交时需判断价格要素是否不为空
+        msg_text = self.cc.commit()
+        if '提交订单成功!' in msg_text:
+            if flow == 'T':
+                i = self.cc.checkitem(assert_dict["order_type"])
+                self.cc.save_order(i, OrderType.DAYSCHARACTER, car_type=car_type)
+                rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
+                l1_date = str(rs_date).split(' ')
+                l2_date = str(assert_dict['date_time']).split(' ')
+                self.assertEqual(l1_date[0], l2_date[0])
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
+                self.assertEqual(assert_dict['order_type'], rs_type)
+                rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
+                self.assertEqual(1, rs_count)
+        else:
+            log.logger.debug(f'多日包车订单下单失败，msg={msg_text}')
+            assert False
 
-    test_case = ["14759250515", "13328775856", "福建省|厦门市|350200", "高林居住区", "福建省|厦门市|350200", "中医院", "1", "T"],
-    prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田汽车站", "福建省|三明市|350400", "大田县行政服务中心", "1", "T"],
+    test_case = ["14759250515", "13328775856", "福建省|厦门市|350200", "高林", "福建省|厦门市|350200", "中医院", "1", "T"],
+    prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田汽车站", "福建省|三明市|350400", "大田行政服务中心", "1", "T"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
 #    @data(*test_case if argv[1] == 'TEST' else prod_case)
@@ -212,12 +242,16 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             self.cc.driver.find_element_by_css_selector(css).click()
             sleep(1)
             self.cc.driver.find_element_by_css_selector('#submitAll').click()
-            sleep(2)
-            if len(self.cc.driver.find_elements_by_css_selector('#flightsAll-suggest>div')) > count:
-                count += 1
+            msg_text = utils.wait_for_laymsg(self.cc.driver)
+            if '提交订单成功!' in msg_text:
+                if len(self.cc.driver.find_elements_by_css_selector('#flightsAll-suggest>div')) > count:
+                    count += 1
+                else:
+                    count = 1
+                sleep(0.5)
             else:
-                count = 1
-            sleep(0.5)
+                log.logger.debug(f'快线订单下单失败，msg={msg_text}')
+                assert False
         if flow == 'T':
             WebDriverWait(self.cc.driver, 20).until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, '#availableSeats'), "当前余票"))
             self.cc.driver.find_element_by_css_selector('#flightsAll').click()
@@ -230,17 +264,21 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             assert_dict['date'] = str(self.cc.driver.execute_script('return $("#appoint_time_bus").val()'))[5:]
             assert_dict['time'] = str(self.cc.driver.execute_script('return $("#flightsAll").val()'))[:5]
             sleep(2)  # 暂停确保同步
-            self.cc.commit(pricetip_flag=False)
-            i = self.cc.checkitem(assert_dict["order_type"], by_phone=by_phone)
-            self.cc.save_order(i, OrderType.FASTLINE)
-            rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
-            l1_date = str(rs_date).split(' ')
-            self.assertEqual(assert_dict['date'], l1_date[0])
-            self.assertEqual(assert_dict['time'], l1_date[1])
-            rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
-            self.assertEqual(assert_dict['order_type'], rs_type)
-            rs_count = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3)
-            self.assertEqual(customer_count, rs_count)
+            msg_text = self.cc.commit(pricetip_flag=False)
+            if '提交订单成功!' in msg_text:
+                i = self.cc.checkitem(assert_dict["order_type"], by_phone=by_phone)
+                self.cc.save_order(i, OrderType.FASTLINE)
+                rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
+                l1_date = str(rs_date).split(' ')
+                self.assertEqual(assert_dict['date'], l1_date[0])
+                self.assertEqual(assert_dict['time'], l1_date[1])
+                rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
+                self.assertEqual(assert_dict['order_type'], rs_type)
+                rs_count = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3)
+                self.assertEqual(customer_count, rs_count)
+            else:
+                log.logger.debug(f'快线订单下单失败，msg={msg_text}')
+                assert False
 
     test_case = ["14759250515", "5603293", "厦门市|xmsndj",  "软件园二期", "软件园观日路24号", "T"],
     prod_case = ["14759250515", "5603293", "厦门市|xmsdj",  "软件园二期", "软件园观日路24号", "T"],
@@ -255,22 +293,30 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["order_type"] = "代驾"
         assert_dict["date_time"] = utils.get_time("", "")
         self.cc.getUserInfo(phone)
+#        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         self.cc.selectOrderType('代驾')
         self.cc.driver.execute_script('$("#receiveTel").val("' + receive_phone + '")')
         self.cc.orderHelpDrive(city, origin_addr, des_addr)
-        self.cc.commit()
-        if flow == 'T':
-            i = self.cc.checkitem(assert_dict["order_type"])
-            self.cc.save_order(i, OrderType.HELPDRIVE)
-            rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
-            l1_date = str(rs_date).split(' ')
-            l2_date = str(assert_dict['date_time']).split(' ')
-            self.assertEqual(l1_date[0], l2_date[0])
-            self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
-            rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
-            self.assertEqual(assert_dict['order_type'], rs_type)
-            rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
-            self.assertEqual(1, rs_count)
+        msg_text = self.cc.commit()
+        if '提交订单成功!' in msg_text:
+            if flow == 'T':
+                i = self.cc.checkitem(assert_dict["order_type"])
+                self.cc.save_order(i, OrderType.HELPDRIVE)
+                rs_date = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 1)
+                l1_date = str(rs_date).split(' ')
+                l2_date = str(assert_dict['date_time']).split(' ')
+                self.assertEqual(l1_date[0], l2_date[0])
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                rs_type = utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 2)
+                self.assertEqual(assert_dict['order_type'], rs_type)
+                rs_count = int(utils.get_cell_content(self.cc.driver, '#callOrderPage>table', i, 3))
+                self.assertEqual(1, rs_count)
+        else:
+            log.logger.debug(f'代驾订单下单失败，msg={msg_text}')
+            assert False
+
+
+
 
 
 

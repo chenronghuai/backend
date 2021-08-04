@@ -1,8 +1,11 @@
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from time import sleep
 import utils
+import log
 from utils import OrderType, DriverType, FoundRecordError, OrderStatus, CarType, FoundDriverError
 import globalvar
 from sys import argv
@@ -36,7 +39,7 @@ class FuncInterCenter:
         self.current_oc_center.clear()
         self.current_oc_center.append(center)
         utils.input_ori_des(self.driver, origin, ori_value, destination, des_value)
-        sleep(1)  # 2021-5-21 灰度环境经常目的地方位被情况，怀疑与查询操作有冲突，加等待试试
+        sleep(1)  # 2021-5-21 灰度环境经常目的地方位被清空，怀疑与查询操作有冲突，加等待试试
         self.driver.find_element_by_css_selector('div#ipt_line_query').click()
 
     def appoint_order(self, order_id, driver_id):
@@ -46,18 +49,19 @@ class FuncInterCenter:
         self.driver.find_element_by_css_selector('div.nav-right.td-opera > a[title="即时"]').click()
         sleep(0.5)
         self.driver.execute_script('$("#orderImmediately>table>tbody>tr").html("")')
-        self.driver.find_element_by_css_selector('#order-nav-query').click()  #多订单指派，从2-->1时，需要重新查询确保以下的locator正确?
+        self.driver.find_element_by_css_selector('#order-nav-query').click()  # 多订单指派，从2-->1时，需要重新查询确保以下的locator正确?
         order_css = utils.get_record_by_attr(self.driver, '#orderImmediately>table>tbody>tr', 'order-id', order_id)
         order_css += '>td.td-opera>a[name="order-list-appoint"]'
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, order_css))).click()
         WebDriverWait(self.driver, 5).until(
-            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/orderCtrl.do"]')))
+            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getOrderDriverAppointPage"]')))
         records = WebDriverWait(self.driver, 10).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercity-lists>tr>td:nth-child(1)>input')))
-        for i in range(1, len(records)+1):
+        for i in range(1, len(records) + 1):
             actual_value = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, f'#intercity-lists>tr:nth-child({i})>td:nth-child(1)>input'))).get_attribute(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, f'#intercity-lists>tr:nth-child({i})>td:nth-child(1)>input'))).get_attribute(
                 'driver_id')
             if driver_id == actual_value:
                 driver_css = f'#intercity-lists>tr:nth-child({i})' + '>td:nth-child(1)'
@@ -66,15 +70,27 @@ class FuncInterCenter:
         self.driver.find_element_by_css_selector(driver_css).click()
         sleep(1)
         self.driver.find_element_by_css_selector('#todoSaveBtn').click()
+
+        try:
+            msg_text = WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+            setattr(self, 'appoint_result_text', msg_text)
+        except:
+            pass
+
         self.driver.switch_to.parent_frame()
         sleep(1)  # 切换到父iframe需强制sleep，否则接下来的上层iframe定位将会失败，不知原因
         try:
             WebDriverWait(self.driver, 1).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn->a.layui-layer-btn0'))).click()
+                EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn->a.layui-layer-btn0'))).click()
+            msg_text = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+            setattr(self, 'appoint_result_text', msg_text)
         except:
             pass
-        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))  # 确认指派后，等待指派成功弹框消失
-        WebDriverWait(self.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))  # 确认指派后，等待蒙层消失
+
+
 
     def select_driver(self, driver_id):
         try:
@@ -103,12 +119,26 @@ class FuncInterCenter:
                     self.driver.find_element_by_css_selector(expect_css).click()
                     sleep(1)
                     self.driver.find_element_by_css_selector('#orderAddBtn').click()
+                    try:
+                        msg_text = WebDriverWait(self.driver, 3).until(
+                            EC.presence_of_element_located(
+                                (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                        setattr(self, 'add_result_text', msg_text)
+                    except:
+                        pass
                     self.driver.switch_to.parent_frame()
                     sleep(1)
                     try:
                         WebDriverWait(self.driver, 1).until(
                             EC.visibility_of_element_located(
                                 (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn->a.layui-layer-btn0'))).click()
+                        try:
+                            msg_text = WebDriverWait(self.driver, 5).until(
+                                EC.presence_of_element_located(
+                                    (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                            setattr(self, 'add_result_text', msg_text)
+                        except:
+                            pass
                     except:
                         pass
                     self.driver.switch_to.frame(
@@ -140,7 +170,8 @@ class FuncInterCenter:
                     self.driver.find_element_by_css_selector(expect_css).click()
                     sleep(1)
                     self.driver.find_element_by_css_selector('#orderAddBtn').click()
-                    sleep(1)
+                    msg_text = utils.wait_for_laymsg(self.driver)
+                    setattr(self, 'add_result_text', msg_text)
                     self.driver.find_element_by_css_selector('#closeBtn').click()
                     break
             self.driver.switch_to.parent_frame()
@@ -171,6 +202,7 @@ class FuncInterCenter:
         elif order.order_type in [OrderType.CHARACTER, OrderType.DAYSCHARACTER]:
             free_drivers = list(filter(lambda x: x.charter_count == 0 and x.appoint_user_count == 0, net_drivers))
             if len(free_drivers) == 0:
+                log.logger.error(f'没有匹配的包车司机！')
                 raise IndexError
             else:
                 for index, driver in enumerate(free_drivers):
@@ -178,4 +210,38 @@ class FuncInterCenter:
                         driver.charter_count += 1
                         return driver
                     elif index == len(free_drivers) - 1:
+                        log.logger.error(f'没有匹配的包车车型！')
                         raise IndexError  # FoundDriverError(order.order_type)
+
+    def get_operate_text(self, category):
+        text_list = []
+        if category in ['专车排班', '系统排班', '专车核单', '已发车', '返程发车', 'U+在线']:
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#driverList'))).click()
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
+            try:
+                WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#intercityDriver>table>tbody#tdy_driver_queue>tr')))
+                text_list = utils.get_operation_field_text(self.driver, '#intercityDriver>table', '#intercityDriver>table>tbody#tdy_driver_queue>tr:nth-child(1)')
+            except StaleElementReferenceException:
+                sleep(2)
+                text_list = utils.get_operation_field_text(self.driver, '#intercityDriver>table', '#intercityDriver>table>tbody#tdy_driver_queue>tr:nth-child(1)')
+            except TimeoutException:
+                log.logger.error(f'超时或没有{category}订单的记录！')
+                raise IndexError
+
+        elif category in ['即时', '预约', '异常', '已派', '分享']:
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderList'))).click()
+            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
+            sleep(1)  # 以下定位tbody#tdy_driver_queue>tr暂不是唯一定位，加等待提高正确性，待能区分后再优化
+            try:
+                WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderImmediately>table>tbody#tdy_driver_queue>tr')))
+                text_list = utils.get_operation_field_text(self.driver, '#orderImmediately>table', '#orderImmediately>table>tbody#tdy_driver_queue>tr:nth-child(1)' )
+            except StaleElementReferenceException:
+                sleep(2)
+                text_list = utils.get_operation_field_text(self.driver, '#orderImmediately>table', '#orderImmediately>table>tbody#tdy_driver_queue>tr:nth-child(1)')
+            except TimeoutException:
+                log.logger.error(f'超时或者没有{category}订单的记录！')
+                raise IndexError
+
+        return text_list
+
+

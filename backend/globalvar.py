@@ -3,13 +3,15 @@ global_dict = {}
 order_pool = []
 driver_pool = []
 opened_window_pool = []
+appointed_driver_pool = []
 
 
 def init():
-    global global_dict, order_pool, driver_pool, opened_window_pool
+    global global_dict, order_pool, driver_pool, opened_window_pool, appointed_driver_pool
     global_dict = {}
     order_pool = []
     driver_pool = []
+    appointed_driver_pool = []
     opened_window_pool = []
 
 

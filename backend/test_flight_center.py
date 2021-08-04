@@ -74,7 +74,6 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         if status:
             fastline_orders[0].order_status = OrderStatus.APPOINTED
         self.assertTrue(status)
-        log.logger.debug(f'第一个可指派快线订单{fastline_orders[0].order_id}指派后状态为：{fastline_orders[0].order_status}')
 
     @data(OrderType.CARPOOLING, OrderType.FASTLINE)
     def test_add_order(self, order_type):
@@ -94,12 +93,17 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         else:
             self.fc.driver.find_element_by_css_selector(driver_css + '>td:nth-child(11)>a[name="btnRepairOrderInterc"]').click()
             self.fc.add_inter_order(order_.order_id)
+            if '补单操作成功!' not in getattr(self.fc, 'add_result_text', '未获取到补单结果信息'):
+                log.logger.error(f'补城际订单失败，msg={getattr(self.fc, "add_result_text")}')
+                assert False
         if argv[1] != 'TEST':
             sleep(2)
+        self.fc.driver.execute_script("$('#tdy_driver_queue').html('')")
+        self.fc.driver.find_element_by_css_selector('#flights_driver_query').click()
+        WebDriverWait(self.fc.driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#tdy_driver_queue>tr[page_type="driver_queue"]')))
         after_add_count = int(WebDriverWait(self.fc.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
         status = True if after_add_count == pre_add_count + order_.order_count else False
         if status:
             order_.order_status = OrderStatus.APPOINTED
         self.assertTrue(status)
-        log.logger.debug((f'补单后订单{order_.order_id}状态为：{order_.order_status}'))
 

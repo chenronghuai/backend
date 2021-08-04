@@ -2,7 +2,7 @@ import os
 import re
 import time
 import unittest
-from time import sleep
+from time import sleep, localtime
 import configparser
 import random
 import globalvar
@@ -13,7 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from enum import Enum, unique
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
 
 class OrderType(object):
@@ -29,10 +29,18 @@ class OrderType(object):
 class OrderStatus(object):
     WAITING = "待处理"
     APPOINTED = "已指派"
+    REWAITING = "重进队列"
     ONCAR = "已上车"
     OFFCAR = "已下车"
     COMPLETE = "已完成"
     CANCEL = "已取消"
+
+
+class Node(object):
+    ORDERED = '下单'
+    APPOINTED = '指派'
+    CANCELED = '取消'
+    REAPPOINTED = '改派'
 
 
 class CarType(object):
@@ -78,7 +86,7 @@ class FoundDriverError(Exception):
         return '找不到匹配的司机： {}'.format(repr(self.id_))
 
 
-def cancel_order(driver, reason):
+def cancel_order(driver, reason, from_src):
     """
     :param driver:
     :param reason: 取消原因，文本取后台取消原因文本
@@ -89,9 +97,27 @@ def cancel_order(driver, reason):
     xpath_cancel = '//form/div/label[text()="' + reason + '"]'
     WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, xpath_cancel))).click()
     driver.find_element_by_css_selector('#todoCancelBtn').click()
+    try:
+        driver.switch_to.parent_frame()
+        return wait_for_laymsg(driver)
+
+    except TimeoutException:  # 市内货代驾订单，可能由于超时系统自动取消订单，页面还有”消单“入口，机率极低
+        driver.switch_to.default_content()
+        WebDriverWait(driver, 2).until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
+        driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, 'iframe[src="/' + from_src + '"]'))
+        return '乘客已经服务结束或者已经取消订单'
+
+
+def reback_order(driver, reason):
+    WebDriverWait(driver, 5).until(EC.frame_to_be_available_and_switch_to_it(
+        (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getOrderRebackPage"]')))
+    xpath_cancel = '//form/div/label[text()="' + reason + '"]'
+    WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, xpath_cancel))).click()
+    driver.find_element_by_css_selector('#todoRebackBtn').click()
+    msg_text = wait_for_laymsg(driver)
     driver.switch_to.parent_frame()
-    WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-    WebDriverWait(driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
+    return msg_text
 
 
 def modify_price(driver, amount):
@@ -106,7 +132,8 @@ def modify_price(driver, amount):
     driver.execute_script("$('#price').val('" + str(amount) + "')")
     driver.find_element_by_css_selector('#todoSureBtn').click()
     #强制停2妙，采用等待弹框消失，这种情形下driver貌似会进入到到最外层，与取消订单时的情形不同，后续跟踪！！！
-    sleep(2)
+    #sleep(2)
+    wait_for_ajax(driver)
     driver.switch_to.parent_frame()
 
 
@@ -226,10 +253,14 @@ def get_cell_content(driver, table_selector, row, column):
     :param column: 单元格的列
     :return: 返回单元格数据
     """
-    table_loc = driver.find_element_by_css_selector(table_selector)
     cell_selector = 'tbody > tr:nth-child({0}) > td:nth-child({1})'.format(row, column)  # 经验证，不管是1条还是多条记录，该定位语句都没有问题
-
-    return table_loc.find_element_by_css_selector(cell_selector).text
+    fetch_text = ''
+    try:
+        fetch_text = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.CSS_SELECTOR, table_selector + '>' + cell_selector))).text
+    except TimeoutException:
+        log.logger.warning(f'获取单元格内容超时：位置={table_selector}>{cell_selector}')
+    finally:
+        return fetch_text
 
 
 def get_record_by_attr(driver, locator, attr_name, value):
@@ -250,14 +281,13 @@ def get_record_by_attr(driver, locator, attr_name, value):
             try:
                 actual_value = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i+1})'))).get_attribute(attr_name)
             except StaleElementReferenceException:
-#                sleep(3)  # 为了兼容灰度环境慢的问题,调大等待时间(命中几率较低，影响较小)
                 actual_value = WebDriverWait(driver, 30).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, locator + f':nth-child({i + 1})'))).get_attribute(
                     attr_name)
             if actual_value == value:
                 return locator + ':nth-child({})'.format(i + 1)
             elif actual_value != value and i == len(records) - 1:
-                log.logger.info(f'找不到记录：目标值={value},最后一条记录取值={actual_value}')
+                log.logger.info(f'找不到记录：目标值={value},最后一条记录值={actual_value}')
                 raise FoundRecordError(value, locator)
     else:
         log.logger.warning(f'该定位下({locator})没有找到任何记录')
@@ -363,33 +393,65 @@ def select_operation_by_attr(driver, table_locator, attr_locator, attr_name, val
                     EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(
                     opera_text).click()
         elif "操作" not in text and index == len(text_list)-1:
+            log.logger.error(f'{table_locator}表格没有"操作"字段')
             raise IndexError  # FoundRecordError("操作", table_locator)
+
+
+def get_operation_field_text(driver, table_locator, record_locator):
+    """
+    获取操作栏菜单文本
+    :param driver: webdriver对象
+    :param table_locator: 表的CSS locator
+    :param record_locator: 目标记录的CSS locator
+    :return: 操作菜单的文本列表
+    """
+    operation_text_list = []
+    try:
+        field_list = [x.text for x in WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
+    except:
+        sleep(1)
+        field_list = [x.text for x in WebDriverWait(driver, 5).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
+    for index, text in enumerate(field_list):
+        if "操作" in text:
+            a_text_css = record_locator + f'>td:nth-child({index+1})' + '>a'
+            try:
+                we_operation_texts = WebDriverWait(driver, 5).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, a_text_css)))
+            except:
+                sleep(1)
+                we_operation_texts = WebDriverWait(driver, 5).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, a_text_css)))
+            for i in we_operation_texts:
+                temp = i.text
+                if temp.find('\n') != -1:  # 特殊处理类似'分享\n6'的文本
+                    temp = temp[:temp.find('\n')]
+                operation_text_list.append(temp)
+    return operation_text_list
 
 
 def get_time(date, t_time):
     if date == "今天" or date == "":
         secs = time.time()
     elif date == "明天":
-        secs = time.time()+86400
+        secs = time.time()+24*60*60  # 加一天的秒数
 
-    month = time.gmtime(secs).tm_mon
+    month = localtime(secs).tm_mon
     month_str = str(month) if month >= 10 else '0' + str(month)
-    day = time.gmtime(secs).tm_mday
+    day = localtime(secs).tm_mday
     day_str = str(day) if day >= 10 else '0' + str(day)
     if t_time == "":
-        hour = time.gmtime(secs).tm_hour+8
+        hour = localtime(secs).tm_hour
         hour_str = str(hour) if hour >= 10 else '0' + str(hour)
-        minute = time.gmtime(secs).tm_min
+        minute = localtime(secs).tm_min
         minute_str = str(minute) if minute >= 10 else '0' + str(minute)
     else:
         hour_str = str(t_time)[0:2]
         minute_str = str(t_time)[2:4]
         if date == "今天" or date == "":  # 跨凌晨12点会有问题
-            hour = time.gmtime(secs).tm_hour + 8
+            hour = localtime(secs).tm_hour
             hour_num = hour*60
-            minute = time.gmtime(secs).tm_min
+            minute = localtime(secs).tm_min
             minute_num = minute
-            if (int(hour_str)*60+int(month_str))-(hour_num+minute_num) < 30:  # 30分钟内算即时单
+            if (int(hour_str)*60+int(minute_str))-(hour_num+minute_num) < 40:  # 40分钟内算即时单
                 hour_str = str(hour) if hour >= 10 else '0' + str(hour)
                 minute_str = str(minute) if minute >= 10 else '0' + str(minute)
 
@@ -407,6 +469,11 @@ def convert_to_minute(t):
 
 
 def normal_to_datetime(src):
+    """
+    把'2020-07-06 08:53:55'格式的时间转化为datetime对象，用于时间先后对比
+    :param src:字符串，格式为'2020-07-06 08:53:55'
+    :return:datetime对象
+    """
     assert isinstance(src, str)
     dt_list = src.split(' ')
     date_list = dt_list[0].split('-')
@@ -465,9 +532,43 @@ def generate_password():
     return s
 
 
+def wait_for_laymsg(driver):
+    """
+    等待layer msg弹框出现和消失
+    :param driver:webdriver对象
+    :return: 弹框的文本内容，供后续流程判断
+    """
+    result_text = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+    try:
+        WebDriverWait(driver, 15).until_not(lambda x: x.find_element_by_css_selector('.layui-layer-content.layui-layer-padding'))
+    except:
+        pass
+    return result_text
+
+
+def wait_for_load(driver):
+    """
+    等待载入旋转图标消失
+    :param driver:
+    :return:
+    """
+    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-loading3')))
+    WebDriverWait(driver, 15).until_not(
+        EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-loading3')))
+
+
+def wait_for_ajax(driver_):
+    wait = WebDriverWait(driver_, 15)
+    try:
+        wait.until(lambda x: x.execute_script('return jQuery.active') == 0)
+        wait.until(lambda x: x.execute_script('return document.readyState') == 'complete')
+    except Exception as e:
+        pass
+
+
 def make_sure_driver(driver, mother_menu, child_menu, title, src_link):
     """
-    确保当前的webdriver有效，用于功能函数的开始
+    确保当前的iframe有效
     :param driver: webdriver
     :param mother_menu: 母菜单（字符串）
     :param child_menu: 子菜单（字符串）

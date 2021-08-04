@@ -46,6 +46,9 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
 
     @data(*test_driver if argv[1] == 'TEST' else prod_driver)
     def test_driver_cancel_report(self, phone):
-        report_status = self.fdr.driver_cancel_report(phone)
-        self.assertEqual(report_status, '未报班')
+        try:
+            report_status = self.fdr.driver_cancel_report(phone)
+            self.assertEqual(report_status, '未报班')
+        finally:
+            self.fdr.driver_report_by_phone(phone, "361000", "361000")
 
