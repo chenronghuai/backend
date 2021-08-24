@@ -8,22 +8,22 @@ import globalvar
 class FuncFlightsManage:
 
     def __init__(self):
-        self.driver = globalvar.get_value('driver')
-        utils.make_sure_driver(self.driver,  '班线管理', '班次管理', '班次管理', 'flights.do')
+#        self.driver = globalvar.get_value('driver')
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER,  '班线管理', '班次管理', 'flights.do')
 
     def add_flight(self, center, line, flight_no, seat_num, depart_date, depart_time):
-        self.driver.find_element_by_css_selector('#selCenter').click()
-        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCenter').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
-        self.driver.find_element_by_css_selector('#selLine').click()
-        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selLine').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname="' + line + '"]'))).click()
-        self.driver.find_element_by_css_selector('#flightsNo').send_keys(flight_no)
-        self.driver.find_element_by_css_selector('#saleSeats').send_keys(seat_num)
-        self.driver.find_element_by_css_selector('#flightsDate').send_keys(depart_date)
-        self.driver.find_element_by_css_selector('#flightsDispatchedTime').send_keys(depart_time)
-        self.driver.find_element_by_css_selector('#btnSave').click()
-        msg_text = utils.wait_for_laymsg(self.driver)
-        WebDriverWait(self.driver, 5).until_not(
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#flightsNo').send_keys(flight_no)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#saleSeats').send_keys(seat_num)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#flightsDate').send_keys(depart_date)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#flightsDispatchedTime').send_keys(depart_time)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
+        msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until_not(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe[src^="/flights.do?method=editLineFlights"]')))
         return msg_text

@@ -103,6 +103,7 @@ def cancel_order(driver, reason, from_src):
 
     except TimeoutException:  # 市内货代驾订单，可能由于超时系统自动取消订单，页面还有”消单“入口，机率极低
         driver.switch_to.default_content()
+        sleep(2)  # 碰到超时，加等待试试，很难碰到
         WebDriverWait(driver, 2).until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
         driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, 'iframe[src="/' + from_src + '"]'))
@@ -221,6 +222,12 @@ def switch_frame(driver, mother_menu, child_menu, frame_name):
     we_childmenu = driver.find_element_by_css_selector('[tit=' + child_menu + ']')
     we_childmenu.location_once_scrolled_into_view
     we_childmenu.click()
+
+    sleep(0.5)
+    driver.switch_to.default_content()
+    title = driver.execute_script("return $('.tab-tit>li').last().attr('tit')")
+    globalvar.set_value(frame_name, title)
+
     WebDriverWait(driver, 5).until(
         EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src="/' + frame_name + '"]')))
     sleep(2)  # 预留时间加载js
@@ -231,8 +238,6 @@ def switch_exist_frame(driver, to_src, title):
     driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, 'iframe[src="/' + to_src + '"]'))
     driver.execute_script(
         "$(window.parent.$('.tab-tit>li').filter(function(index){return $(this).text().indexOf('" + title + "')>=0;})).click()")
-#    driver.execute_script("""$(window.parent.$("iframe[src='/""" + from_src + """']")).parent().removeClass('on');
-#    $(window.parent.$("iframe[src='/""" + to_src + """']")).parent().addClass('on')""")
 
 
 def get_first_order(order_type):
@@ -538,7 +543,11 @@ def wait_for_laymsg(driver):
     :param driver:webdriver对象
     :return: 弹框的文本内容，供后续流程判断
     """
-    result_text = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+#    result_text = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+#    result_text = WebDriverWait(driver, 15).until(
+#        EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text  # visibility时偶发超时，换成presence
+    WebDriverWait(driver, 15, 0.2).until(lambda driver: driver.find_element_by_css_selector('.layui-layer-content.layui-layer-padding').text != '')
+    result_text = driver.find_element_by_css_selector('.layui-layer-content.layui-layer-padding').text
     try:
         WebDriverWait(driver, 15).until_not(lambda x: x.find_element_by_css_selector('.layui-layer-content.layui-layer-padding'))
     except:
@@ -566,7 +575,7 @@ def wait_for_ajax(driver_):
         pass
 
 
-def make_sure_driver(driver, mother_menu, child_menu, title, src_link):
+def make_sure_driver(driver, mother_menu, child_menu, src_link):
     """
     确保当前的iframe有效
     :param driver: webdriver
@@ -577,7 +586,8 @@ def make_sure_driver(driver, mother_menu, child_menu, title, src_link):
     :return:
     """
     if src_link in globalvar.opened_window_pool:
-        switch_exist_frame(driver, src_link, title)
+#        switch_exist_frame(driver, src_link, title)
+        switch_exist_frame(driver, src_link, globalvar.get_value(src_link))
     else:
         switch_frame(driver, mother_menu, child_menu, src_link)
         globalvar.opened_window_pool.append(src_link)

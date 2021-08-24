@@ -13,7 +13,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = globalvar.get_value('driver')
+#        cls.driver = globalvar.get_value('driver')
         cls.fdr = FuncDriverReport()
         cls.__name__ = cls.__name__ + "（司机报班：司机通过手机号码、车牌号码进行报班，取消报班）"
 

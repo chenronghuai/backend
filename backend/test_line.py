@@ -16,7 +16,7 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = globalvar.get_value('driver')
+#        cls.driver = globalvar.get_value('driver')
         cls.lf = FuncLine()
         '''
         utils.switch_frame(cls.driver, '人员车辆管理', '线路管理', 'line.do')
@@ -43,9 +43,9 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
     @data(*test_line if argv[1] == 'TEST' else prod_line)
     def test_safe_phone(self, *args):
         self.lf.queryLine(line_num=args[0])
-        utils.select_operation_by_attr(self.lf.driver, '#line_table', '#line_table>tbody>tr',  'data-line-id', args[0], '安全号码')
+        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr',  'data-line-id', args[0], '安全号码')
         self.lf.setSafePhone(args[1], args[2], args[3])
-        utils.select_operation_by_attr(self.lf.driver, '#line_table', '#line_table>tbody>tr',  'data-line-id', args[0], '安全号码')
+        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr',  'data-line-id', args[0], '安全号码')
         safe_dict = self.lf.getSafePhone()
         self.assertEqual(safe_dict['province'], args[1])
         self.assertEqual(safe_dict['city'], args[2])
@@ -57,19 +57,19 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
     @data(*test_line if argv[1] == 'TEST' else prod_line)
     def test_commission(self, *args):
         self.lf.queryLine(line_num=args[0])
-        utils.select_operation_by_attr(self.lf.driver, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0], '手续费')
+        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0], '手续费')
         result = self.lf.setCommission(carpool=args[1], dayscharacter=args[2], express=args[3], character=args[4])
-        utils.select_operation_by_attr(self.lf.driver, '#line_table', '#line_table>tbody>tr', 'data-line-id',
+        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                        args[0], '手续费')
-        WebDriverWait(self.lf.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/lineCommission.do"]')))
         for i, k in result.items():
-            self.assertIn(self.lf.driver.execute_script('return $("' + i + '").val()'), k)
-        self.lf.driver.find_element_by_css_selector('#btnEsc').click()
-        self.lf.driver.switch_to.parent_frame()
-        WebDriverWait(self.lf.driver, 5).until(
+            self.assertIn(globalvar.GLOBAL_DRIVER.execute_script('return $("' + i + '").val()'), k)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnEsc').click()
+        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-        WebDriverWait(self.lf.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
 
     test_car = ['361000_to_362300', '商务中巴/8座', '新能源/5座', True], ['361000_to_362300', '商务中巴/8座', '新能源/5座', False]
     prod_car = ['361000_to_361000',  '商务中巴/8座', '新能源/5座', True], ['361000_to_361000', '商务中巴/8座', '新能源/5座', False]
@@ -79,15 +79,15 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
     def test_car_type(self, *args):
         result_car_list = []
         self.lf.queryLine(line_num=args[0])
-        utils.select_operation_by_attr(self.lf.driver, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0],
+        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0],
                                        '车型')
         car_args = args[1:-1]
         self.lf.setCarType(*car_args, flag=args[-1])
-        utils.select_operation_by_attr(self.lf.driver, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0],
+        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0],
                                        '车型')
-        WebDriverWait(self.lf.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=lineCarClassPage"]')))
-        we_result_cars = self.lf.driver.find_elements_by_css_selector('select#sel_right>option')
+        we_result_cars = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('select#sel_right>option')
         for e in we_result_cars:
             result_car_list.append(e.text)
         for car in car_args:
@@ -96,9 +96,9 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
             else:
                 self.assertNotIn(car, result_car_list)
 
-        self.lf.driver.find_element_by_css_selector('#btnEsc').click()
-        self.lf.driver.switch_to.parent_frame()
-        WebDriverWait(self.lf.driver, 5).until(
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnEsc').click()
+        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-        WebDriverWait(self.lf.driver, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
 

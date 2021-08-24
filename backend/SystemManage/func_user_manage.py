@@ -14,8 +14,8 @@ from utils import FoundRecordError
 class FuncUserManage:
     temp_order_pool = []
 
-    def __init__(self):
-        self.driver = globalvar.get_value('driver')
+#    def __init__(self):
+#        self.driver = globalvar.get_value('driver')
 
     def get_user_attr(self, user):
         """
@@ -24,15 +24,15 @@ class FuncUserManage:
         :return:
         """
         attr_dict = {}
-        utils.make_sure_driver(self.driver, '系统管理', '用户管理', '用户管理', 'sysbbxuser.do')
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '系统管理', '用户管理', 'sysbbxuser.do')
 
-        we_username = WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userName')))
+        we_username = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userName')))
         we_username.clear()
         we_username.send_keys(user)
-        self.driver.execute_script("$('table#bbxuser_table>tbody>tr').html('')")
-        self.driver.find_element_by_css_selector('#btnQuery').click()
+        globalvar.GLOBAL_DRIVER.execute_script("$('table#bbxuser_table>tbody>tr').html('')")
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
         try:
-            we_tds = WebDriverWait(self.driver, 5).until(
+            we_tds = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'table#bbxuser_table>tbody>tr>td')))
             fields_value = []
             for i in we_tds:
@@ -53,19 +53,19 @@ class FuncUserManage:
         :param user: 用户账号名称（字符串）
         :return:
         """
-        utils.make_sure_driver(self.driver, '系统管理', '用户管理', '用户管理', 'sysbbxuser.do')
-        we_username = WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userName')))
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '系统管理', '用户管理', 'sysbbxuser.do')
+        we_username = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#userName')))
         we_username.clear()
         we_username.send_keys(user)
-        self.driver.execute_script('$("table#bbxuser_table>tbody").html("")')
-        self.driver.find_element_by_css_selector('#btnQuery').click()
-        WebDriverWait(self.driver, 5).until(
+        globalvar.GLOBAL_DRIVER.execute_script('$("table#bbxuser_table>tbody").html("")')
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#bbxuser_table>tbody>tr')))
-        utils.select_operation_by_field(self.driver, 'table#bbxuser_table', '登录账号', user, '修改')
-        WebDriverWait(self.driver, 10).until(
+        utils.select_operation_by_field(globalvar.GLOBAL_DRIVER, 'table#bbxuser_table', '登录账号', user, '修改')
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
             EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/sysbbxuser.do?method=infoBbxuser"]')))
-        status_sel = self.driver.find_element_by_css_selector('#status')
+        status_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#status')
         Select(status_sel).select_by_visible_text('可用')
-        self.driver.find_element_by_css_selector('#btnSave').click()
-        self.driver.switch_to.parent_frame()
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
+        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
         sleep(2)

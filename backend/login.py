@@ -17,11 +17,13 @@ def login(url_section, user_section, main_flag=True):
     """
     :param url: 目标url,读取config.ini的http section
     :param user: 用户信息,读取config.ini的user section
+    :param main_flag: 是否主线程标志
     :return: driver
     """
     try:
         driver = webdriver.Chrome()
         globalvar.set_value('driver', driver)
+        globalvar.GLOBAL_DRIVER = driver
         driver.get(utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl'))
     except WebDriverException:
         log.logger.critical(f"服务器{utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl')}没有反应")

@@ -24,25 +24,25 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = globalvar.get_value('driver')
+#        cls.driver = globalvar.get_value('driver')
         cls.temp_order_pool = globalvar.order_pool
         globalvar.order_pool.clear()
         cls.__name__ = cls.__name__ + "（权限管理：运营中心订单共享权限，订单管理中账号线路权限、订单完成车队权限）"
 
     @classmethod
     def tearDownClass(cls):
-        utils.switch_exist_frame(cls.driver, 'customerCall.do', '客户')
-        we_phone = cls.driver.find_element_by_css_selector('#phone')
+        utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'customerCall.do', '客户')
+        we_phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#phone')
         we_phone.clear()
         we_phone.send_keys('66666663')
-        WebDriverWait(cls.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#query_all'))).click()
-        WebDriverWait(cls.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#callOrderPage>table>tbody>tr')))
         for order in globalvar.order_pool:
-            utils.select_operation_by_attr(cls.driver, '#callOrderPage>table', '#callOrderPage>table>tbody>tr',
+            utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#callOrderPage>table', '#callOrderPage>table>tbody>tr',
                                            'order-id', order.order_id, '消单')
-            utils.cancel_order(cls.driver, '联系不上司机', 'customerCall.do')
+            utils.cancel_order(globalvar.GLOBAL_DRIVER, '联系不上司机', 'customerCall.do')
 
         globalvar.order_pool = cls.temp_order_pool
 
@@ -54,7 +54,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
 
         try:
             om.share_setup(share_src, share_to, share_flag)
-            utils.make_sure_driver(self.driver, '监控管理', '客户来电', '客户', 'customerCall.do')
+            utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '客户来电', 'customerCall.do')
 
             cu = FuncCustomerCall()
             sleep(1)
@@ -66,25 +66,25 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
             cu.selectDate('', '')
             cu.selectPCount(1)
             cu.commit()
-
-            i = cu.checkitem("拼车")
+            ori, des = cu.get_ori_des()
+            i = cu.checkitem("拼车", ori, des, "66666663")
             cu.save_order(i, OrderType.CARPOOLING)
 
             ic = FuncInterCenter()
             if 'orderCenterNew.do' in globalvar.opened_window_pool:
-                utils.switch_exist_frame(om.driver, 'orderCenterNew.do', '城际调度')
+                utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'orderCenterNew.do', '城际调度')
                 # 切换到“物流中心”
                 ic.input_center_line("物流中心", "XMC", "361000", "XM", "361000")
             else:
                 ic.setup_oc()
             
-            WebDriverWait(om.driver, 5).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderList'))).click()
-            om.driver.find_element_by_css_selector('#order-nav-query').click()
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#order-nav-query').click()
             sleep(0.5)
-            om.driver.find_element_by_css_selector('div.nav-right.td-opera > a[title="即时"]').click()
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div.nav-right.td-opera > a[title="即时"]').click()
             try:
-                records = WebDriverWait(om.driver, 5).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#orderImmediately>table>tbody>tr')))
+                records = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#orderImmediately>table>tbody>tr')))
             except:
                 records = []
             id_list = []
@@ -95,7 +95,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
             else:
                 self.assertTrue(globalvar.order_pool[-1].order_id not in id_list)
         finally:
-            utils.switch_exist_frame(om.driver, 'operations-center.do', '运营中心管理')
+            utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'operations-center.do', '运营中心管理')
             om.restore(share_src, share_to)
             sleep(2)
 
@@ -110,11 +110,14 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         if user_attr_dict['status'] in ['锁定', '不可用']:
             sm.set_user_available(utils.read_config_value(user, 'username'))
         # 切回运营中心页面
-        utils.switch_exist_frame(globalvar.get_value('driver'), 'operations-center.do', '运营中心管理')
-        temp_driver = globalvar.get_value('driver')
+        utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'operations-center.do', '运营中心管理')
+        om.share_setup('厦门运营中心', '物流中心', flag)
+        temp_driver = globalvar.GLOBAL_DRIVER  # 保存上一个webdriver，后面需要复位
+        temp_order_manage_title = globalvar.get_value('orderManage.do')  # 保存上一个opened_window，后面需要复位
+
         new_driver = login.login('TEST', user, main_flag=False)
         try:
-            om.share_setup('厦门运营中心', '物流中心', flag)
+
             utils.switch_frame(new_driver, '监控管理', '订单管理', 'orderManage.do')
             WebDriverWait(new_driver, 10).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
@@ -131,6 +134,8 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         finally:
             new_driver.quit()
             globalvar.set_value('driver', temp_driver)
+            globalvar.GLOBAL_DRIVER = globalvar.get_value('driver')
+            globalvar.set_value('orderManage.do', temp_order_manage_title)
             om.restore('厦门运营中心', '物流中心')
 
 

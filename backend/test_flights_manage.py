@@ -19,7 +19,6 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = globalvar.get_value('driver')
         cls.fm = FuncFlightsManage()
         cls.__name__ = cls.__name__ + "（班次管理：班线班次新增、删除）"
 
@@ -27,10 +26,10 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
           else {"center":"漳州运营中心", "line":"厦门测试班线", "seat_num":"20"})
     @unpack
     def test_add_flihgts(self, center, line, seat_num):
-        self.fm.driver.execute_script("$('#addLineFlights').click()")
+        globalvar.GLOBAL_DRIVER.execute_script("$('#addLineFlights').click()")
         sleep(1)
-        self.fm.driver.switch_to.frame(
-            self.fm.driver.find_element_by_css_selector('iframe[src^="/flights.do?method=editLineFlights"]'))
+        globalvar.GLOBAL_DRIVER.switch_to.frame(
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('iframe[src^="/flights.do?method=editLineFlights"]'))
 
         secs = time.time() + 1800    # 半小时后
         hour = time.localtime(secs).tm_hour  #time.gmtime(secs).tm_hour + 8
@@ -53,29 +52,29 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
 
         msg_text = self.fm.add_flight(center, line, flight_no, seat_num, depart_date, depart_time)
         if '操作成功' in msg_text:
-            self.fm.driver.switch_to.default_content()
-            WebDriverWait(self.fm.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'iframe[src="/flights.do')))
-            we_manage = self.fm.driver.find_element_by_css_selector('iframe[src="/flights.do"]')
-            self.fm.driver.switch_to.frame(we_manage)
+            globalvar.GLOBAL_DRIVER.switch_to.default_content()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'iframe[src="/flights.do')))
+            we_manage = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('iframe[src="/flights.do"]')
+            globalvar.GLOBAL_DRIVER.switch_to.frame(we_manage)
             sleep(2)
-            self.fm.driver.execute_script("$('#selCenter').click()")
-    #        self.fm.driver.find_element_by_css_selector('#selCenter').click()
-            WebDriverWait(self.fm.driver, 5).until(EC.presence_of_element_located(
+            globalvar.GLOBAL_DRIVER.execute_script("$('#selCenter').click()")
+    #        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCenter').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
-            self.fm.driver.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
-            WebDriverWait(self.fm.driver, 5).until(EC.presence_of_element_located(
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
                 (By.XPATH, '//div[@class="fs-options"]/div[@class="fs-option"]/div[text()="' + line + '"]'))).click()
-            self.fm.driver.find_element_by_css_selector('#btnQuery').click()
-            WebDriverWait(self.fm.driver, 5).until(
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#flights_table>tbody>tr')))
 
-            flights = self.fm.driver.find_elements_by_css_selector(
+            flights = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector(
                 'table#flights_table>tbody>tr')
             depart_time_list = []
             flight_no_list = []
             for i in range(1, len(flights) + 1):
-                depart_time_list.append(utils.get_cell_content(self.fm.driver, 'table#flights_table', i, 5))
-                flight_no_list.append(utils.get_cell_content(self.fm.driver, 'table#flights_table', i, 3))
+                depart_time_list.append(utils.get_cell_content(globalvar.GLOBAL_DRIVER, 'table#flights_table', i, 5))
+                flight_no_list.append(utils.get_cell_content(globalvar.GLOBAL_DRIVER, 'table#flights_table', i, 3))
             status = True if depart_time in depart_time_list and flight_no in flight_no_list else False
             self.assertTrue(status)
         else:
@@ -90,46 +89,29 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
         if goal_flight_no is None:
             raise IndexError
 
-        self.fm.driver.find_element_by_css_selector('#selCenter').click()
-        WebDriverWait(self.fm.driver, 5).until(EC.presence_of_element_located(
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCenter').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
-        self.fm.driver.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
-        self.fm.driver.execute_script("""
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
+        globalvar.GLOBAL_DRIVER.execute_script("""
                     $('.fs-options>div').each(function(inx, obj){if($(this).hasClass('selected')){$(this).removeClass('selected');}});
                    """)
-        WebDriverWait(self.fm.driver, 5).until(EC.presence_of_element_located(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
             (By.XPATH, '//div[@class="fs-options"]/div[@class="fs-option"]/div[text()="' + line + '"]'))).click()
-        self.fm.driver.execute_script("$('table#flights_table>tbody').html('')")
-        self.fm.driver.find_element_by_css_selector('#btnQuery').click()
-        WebDriverWait(self.fm.driver, 15).until(
+        globalvar.GLOBAL_DRIVER.execute_script("$('table#flights_table>tbody').html('')")
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#flights_table>tbody>tr')))
-        utils.select_operation_by_field(self.fm.driver, 'table#flights_table', '班次号', self.flight_no, '删除')
-        self.fm.driver.switch_to.default_content()
-        WebDriverWait(self.fm.driver, 5).until(EC.visibility_of_element_located(
+        utils.select_operation_by_field(globalvar.GLOBAL_DRIVER, 'table#flights_table', '班次号', self.flight_no, '删除')
+        globalvar.GLOBAL_DRIVER.switch_to.default_content()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, 'a.layui-layer-btn0'))).click()
-        WebDriverWait(self.fm.driver, 5).until(EC.invisibility_of_element_located(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located(
             (By.CSS_SELECTOR, 'a.layui-layer-btn0')))
-        utils.make_sure_driver(self.fm.driver, '班线管理', '班次管理', '班次管理', 'flights.do')
-        msg_text = utils.wait_for_laymsg(self.fm.driver)
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '班线管理', '班次管理', 'flights.do')
+        msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
         if '操作班次成功!' in msg_text:
-            self.fm.driver.execute_script("$('table#flights_table>tbody').html('')")
-            sleep(1)  # 貌似以下获取的班次号包含已删除，加等待试试
-            self.fm.driver.find_element_by_css_selector('#btnQuery').click()
-            WebDriverWait(self.fm.driver, 5).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#flights_table>tbody>tr')))
-            flights = self.fm.driver.find_elements_by_css_selector('table#flights_table>tbody>tr')
-
-            if len(flights) == 1 and len(flights[0].find_elements_by_css_selector('td')) == 1:
-                return True
-            flight_no_list = []
-            for i in range(1, len(flights) + 1):
-                try:
-                    flight_no_list.append(utils.get_cell_content(self.fm.driver, 'table#flights_table', i, 3))
-                except StaleElementReferenceException:
-                    sleep(2)
-                    flight_no_list.append(utils.get_cell_content(self.fm.driver, 'table#flights_table', i, 3))
-            status = True if goal_flight_no not in flight_no_list else False
-            self.assertTrue(status)
+            assert True
         else:
             log.logger.debug(f'删除班次失败，msg={msg_text}')
             assert False

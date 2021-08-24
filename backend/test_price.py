@@ -12,6 +12,7 @@ import globalvar
 import test_customer_call, test_inter_center, test_order_manage, login
 from MonitorManage.func_customer_call import FuncCustomerCall
 from sys import argv
+import log
 
 
 @ddt
@@ -20,7 +21,7 @@ class TestPrice(unittest.TestCase, metaclass=TestMeta):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = globalvar.get_value('driver')
+#        cls.driver = globalvar.get_value('driver')
         cls.temp_order_pool = globalvar.order_pool
         globalvar.order_pool.clear()
         cls.__name__ = cls.__name__ + "（价格相关：修改价格）"
@@ -32,7 +33,7 @@ class TestPrice(unittest.TestCase, metaclass=TestMeta):
     @data('3.3',)
     def test_modify_price(self, price):
         try:
-            utils.make_sure_driver(self.driver, '监控管理', '客户来电', '客户', 'customerCall.do')
+            utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '客户来电', 'customerCall.do')
             cu = FuncCustomerCall()
             sleep(1)
             cu.getUserInfo("66666663")
@@ -42,23 +43,24 @@ class TestPrice(unittest.TestCase, metaclass=TestMeta):
             cu.selectInterDestination("XM", "观日路24号")
             cu.selectDate('', '')
             cu.selectPCount(1)
+            ori, des = cu.get_ori_des()
             cu.commit()
-
-            i = cu.checkitem("拼车")
+            i = cu.checkitem("拼车", ori, des, "66666663")
             cu.save_order(i, OrderType.CARPOOLING)
-            utils.select_operation_by_attr(self.driver, '#callOrderPage>table', '#callOrderPage>table>tbody>tr', 'order-id', globalvar.order_pool[0].order_id, '改价')
-            utils.modify_price(self.driver, price)
-            we_phone = self.driver.find_element_by_css_selector('#phone')
+            utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '客户来电', 'customerCall.do')
+            utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#callOrderPage>table', '#callOrderPage>table>tbody>tr', 'order-id', globalvar.order_pool[0].order_id, '改价')
+            utils.modify_price(globalvar.GLOBAL_DRIVER, price)
+            we_phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#phone')
             we_phone.clear()
             we_phone.send_keys('66666663')
-            self.driver.execute_script("$('#callOrderPage>table>tbody>tr').html('')")
-            WebDriverWait(self.driver, 5).until(
+            globalvar.GLOBAL_DRIVER.execute_script("$('#callOrderPage>table>tbody>tr').html('')")
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#query_all'))).click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#callOrderPage>table>tbody>tr')))
-            order_css = utils.get_record_by_attr(self.driver, '#callOrderPage>table>tbody>tr', 'order-id', globalvar.order_pool[0].order_id)
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#callOrderPage>table>tbody>tr')))
+            order_css = utils.get_record_by_attr(globalvar.GLOBAL_DRIVER, '#callOrderPage>table>tbody>tr', 'order-id', globalvar.order_pool[0].order_id)
             index = re.search(r'.+child\((\d+)\)', order_css).group(1)
-            self.assertIn(price, utils.get_cell_content(self.driver, '#callOrderPage>table', index, 8))
+            self.assertIn(price, utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#callOrderPage>table', index, 8))
         finally:
-            utils.select_operation_by_attr(self.driver, '#callOrderPage>table', '#callOrderPage>table>tbody>tr',
+            utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#callOrderPage>table', '#callOrderPage>table>tbody>tr',
                                            'order-id', globalvar.order_pool[0].order_id, '消单')
-            utils.cancel_order(self.driver, '联系不上司机', 'customerCall.do')
+            utils.cancel_order(globalvar.GLOBAL_DRIVER, '联系不上司机', 'customerCall.do')

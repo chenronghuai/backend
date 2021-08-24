@@ -4,20 +4,26 @@ order_pool = []
 driver_pool = []
 opened_window_pool = []
 appointed_driver_pool = []
+GLOBAL_DRIVER = None
 
 
 def init():
-    global global_dict, order_pool, driver_pool, opened_window_pool, appointed_driver_pool
+    global global_dict, order_pool, driver_pool, opened_window_pool, appointed_driver_pool, GLOBAL_DRIVER
     global_dict = {}
     order_pool = []
     driver_pool = []
     appointed_driver_pool = []
     opened_window_pool = []
+    GLOBAL_DRIVER = None
 
 
 def set_value(key, value):
     global global_dict
     global_dict[key] = value
+
+
+def get_driver():
+    return GLOBAL_DRIVER
 
 
 def get_value(key, defval=None):

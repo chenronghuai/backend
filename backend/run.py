@@ -98,7 +98,7 @@ if __name__ == '__main__':
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestLine))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPermission))
-        
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPrice))
         '''
         if argv[3] == 'auto':
@@ -123,7 +123,6 @@ if __name__ == '__main__':
                 ssl=True,
             )
             send_mail.send_email()
-
         sleep(1)
     finally:
         action_quit()

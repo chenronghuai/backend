@@ -21,20 +21,20 @@ _create_flag = True
 class FuncCustomerCall:
 
     def __init__(self):
-        self.driver = globalvar.get_value('driver')
-        utils.make_sure_driver(self.driver, '监控管理', '客户来电', '客户', 'customerCall.do')
+#        self.driver = globalvar.get_value('driver')
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '客户来电', 'customerCall.do')
 
     def getUserInfo(self, phone):
-        self.driver.execute_script("$('#userTypeDiv').html('')")
-        we_number = self.driver.find_element_by_css_selector("#phone")
+        globalvar.GLOBAL_DRIVER.execute_script("$('#userTypeDiv').html('')")
+        we_number = globalvar.GLOBAL_DRIVER.find_element_by_css_selector("#phone")
         we_number.clear()
         we_number.send_keys(phone)
-        self.driver.execute_script('$("#callOrderPage>table>tbody").html("")')
-        WebDriverWait(self.driver, 30).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#query_all"))).click()
-        WebDriverWait(self.driver, 15).until(
+        globalvar.GLOBAL_DRIVER.execute_script('$("#callOrderPage>table>tbody").html("")')
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 30).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#query_all"))).click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#userTypeDiv')))
         try:  # 新用户记录可能为空
-            WebDriverWait(self.driver, 3).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#callOrderPage>table>tbody>tr')))
         except:
             pass
@@ -47,9 +47,9 @@ class FuncCustomerCall:
         """
         xpath = '//div/label[text()="' + order_text + '"]'
         try:
-            self.driver.find_element(By.XPATH, xpath).click()
+            globalvar.GLOBAL_DRIVER.find_element(By.XPATH, xpath).click()
         except StaleElementReferenceException:
-            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, xpath))).click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_element_located((By.XPATH, xpath))).click()
         sleep(1)
 
     def selectCarType(self, car_type):
@@ -59,17 +59,17 @@ class FuncCustomerCall:
         :return:
         """
         xpath = '//div[@id="car-types-div"]/label[text()="' + car_type + '"]'
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH, '//div[@id="car-types-div"]')))
-        self.driver.find_element(By.XPATH, xpath).click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_element_located((By.XPATH, '//div[@id="car-types-div"]')))
+        globalvar.GLOBAL_DRIVER.find_element(By.XPATH, xpath).click()
         sleep(1)
 
     def input_customer_phone(self, by_phone):
         if by_phone != "":
-            self.driver.execute_script('$("#tel").val("' + by_phone + '")')
+            globalvar.GLOBAL_DRIVER.execute_script('$("#tel").val("' + by_phone + '")')
 
     def input_receive_phone(self, receive_name, receive_phone):
-        self.driver.execute_script('$("#receiveName").val("' + receive_name + '")')
-        self.driver.execute_script('$("#receiveTel").val("' + receive_phone + '")')
+        globalvar.GLOBAL_DRIVER.execute_script('$("#receiveName").val("' + receive_name + '")')
+        globalvar.GLOBAL_DRIVER.execute_script('$("#receiveTel").val("' + receive_phone + '")')
 
     def selectInterOrigin(self, origin_region_index, origin_region, origin_addr=None):
         """
@@ -79,42 +79,42 @@ class FuncCustomerCall:
         :param origin_addr: 起点地址
         :return:
         """
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#startName-suggest>div')))
         try:  # 超时异常可能是系统刷新时startName-suggest>div为空？使用try试试
-            self.driver.find_element(By.CSS_SELECTOR, '#startName').click()
-            WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div')))
+            globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#startName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div')))
         except TimeoutException:
-            self.driver.find_element(By.CSS_SELECTOR, '#startName').click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div')))
-        self.driver.find_element(By.CSS_SELECTOR, '#startName').send_keys(origin_region_index)
-        self.driver.execute_script("$('#endsName-suggest').html('')")  # 20121-7-1 从下一句的后面移到前面
-        if len(self.driver.find_elements_by_css_selector('#startName-suggest>div')) > 1:
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
+            globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#startName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div')))
+        globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#startName').send_keys(origin_region_index)
+        globalvar.GLOBAL_DRIVER.execute_script("$('#endsName-suggest').html('')")  # 20121-7-1 从下一句的后面移到前面
+        if len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#startName-suggest>div')) > 1:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
                 '//*[@id="startName-suggest"]/div[@text="' + origin_region + '"]')), '起始方位无法获取').click()
 
         sleep(0.5)
-        we_ori_addr = self.driver.find_element_by_css_selector('#startAddr')
-#        WebDriverWait(self.driver, 5).until(
+        we_ori_addr = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#startAddr')
+#        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
 #            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal')))  # 7-9注释，貌似常在
         try:
             we_ori_addr.click()
-            WebDriverWait(self.driver, 3).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
         except TimeoutException:
             we_ori_addr.click()
-            WebDriverWait(self.driver, 3).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal>li')))
         try:
             we_ori_addr.send_keys(origin_addr)
-            WebDriverWait(self.driver, 5).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点POI无法获取').click()  # 此行代码偶发超时异常，增加时间试试效果
         except TimeoutException:
             we_ori_addr.send_keys(origin_addr)
-            WebDriverWait(self.driver, 5).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')),
                 '起点POI无法获取').click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')))
         if argv[1] != 'STAGE':
             sleep(0.5)
@@ -129,29 +129,29 @@ class FuncCustomerCall:
         :param des_addr: 终点地址
         :return:
         """
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
-        self.driver.find_element(By.CSS_SELECTOR, '#endsName').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#endsName-suggest>div')))
-        WebDriverWait(self.driver, 5).until(
+        globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#endsName-suggest>div')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             lambda x: x.execute_script("return $('#endsName-suggest').css('display')") == 'block')
-        self.driver.find_element(By.CSS_SELECTOR, '#endsName').send_keys(des_region_index)
+        globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').send_keys(des_region_index)
         sleep(0.5)
-        WebDriverWait(self.driver, 10).until_not(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until_not(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点信息还没消失')
-        we_des_addr = self.driver.find_element_by_css_selector('#endAddr')
-#        WebDriverWait(self.driver, 5).until(
+        we_des_addr = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#endAddr')
+#        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
 #            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal')))   # 7-9注释，貌似常在
         try:
             we_des_addr.click()
-            WebDriverWait(self.driver, 3).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         except TimeoutException:
             we_des_addr.click()
-            WebDriverWait(self.driver, 3).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         we_des_addr.send_keys(des_addr)
-        WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
             '#end-lists-penal>li:nth-child(1)')), '终点POI无法获取').click()
 
     def orderInnerCity(self, city_index, city_region, ori_addr, des_addr):
@@ -163,29 +163,29 @@ class FuncCustomerCall:
         :param des_addr: 终点地址
         :return:
         """
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#startName-suggest>div')))
-        self.driver.find_element(By.ID, 'startName').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.ID, 'startName-suggest')))
-        self.driver.find_element(By.ID, 'startName').send_keys(city_index)
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
+        globalvar.GLOBAL_DRIVER.find_element(By.ID, 'startName').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.ID, 'startName-suggest')))
+        globalvar.GLOBAL_DRIVER.find_element(By.ID, 'startName').send_keys(city_index)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
                                     '//*[@id="startName-suggest"]/div[@text="' + city_region + '"]')),
                                             '起始方位无法获取').click()
-        we_ori_addr = self.driver.find_element_by_id('startAddr')
+        we_ori_addr = globalvar.GLOBAL_DRIVER.find_element_by_id('startAddr')
         we_ori_addr.click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//*[@id="start-lists-penal"]/li')))
         we_ori_addr.send_keys(ori_addr)
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="start-lists-penal"]/li[1]')), '起点POI无法获取').click()
-        WebDriverWait(self.driver, 5).until_not(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until_not(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="start-lists-penal"]/li[1]')), '起点信息还没消失')
-        we_des_addr = self.driver.find_element_by_id('endAddr')
+        we_des_addr = globalvar.GLOBAL_DRIVER.find_element_by_id('endAddr')
         we_des_addr.click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//*[@id="end-lists-penal"]/li')))
         we_des_addr.send_keys(des_addr)
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
             '终点POI无法获取').click()
 
@@ -194,10 +194,10 @@ class FuncCustomerCall:
         创建新班次，当前时间10分钟后的班次
         :return:
         """
-        utils.switch_frame(self.driver, '班线管理', '班次管理', 'flights.do')
-        self.driver.find_element_by_css_selector('#addLineFlights').click()
+        utils.switch_frame(globalvar.GLOBAL_DRIVER, '班线管理', '班次管理', 'flights.do')
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#addLineFlights').click()
         sleep(1)
-        self.driver.switch_to.frame(self.driver.find_element_by_css_selector('iframe[src^="/flights.do?method=editLineFlights"]'))
+        globalvar.GLOBAL_DRIVER.switch_to.frame(globalvar.GLOBAL_DRIVER.find_element_by_css_selector('iframe[src^="/flights.do?method=editLineFlights"]'))
 
         secs = time.time() + 600  # 时间戳，10分钟后
         hour = time.localtime(secs).tm_hour
@@ -218,106 +218,106 @@ class FuncCustomerCall:
         depart_date = str(year) + '-' + str(mon) + '-' + str(day)
         sleep(1)
 
-        self.driver.find_element_by_css_selector('#selCenter').click()
-        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCenter').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="漳州运营中心"]'))).click()
-        self.driver.find_element_by_css_selector('#selLine').click()
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selLine').click()
         if argv[1] == 'TEST':
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname="高林SM专线"]'))).click()
         else:
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname="厦门测试班线"]'))).click()
-        self.driver.find_element_by_css_selector('#flightsNo').send_keys(flight_no)
-        self.driver.find_element_by_css_selector('#saleSeats').send_keys(20)
-        self.driver.find_element_by_css_selector('#flightsDate').send_keys(depart_date)
-        self.driver.find_element_by_css_selector('#flightsDispatchedTime').send_keys(depart_time)
-        self.driver.find_element_by_css_selector('#btnSave').click()
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#flightsNo').send_keys(flight_no)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#saleSeats').send_keys(20)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#flightsDate').send_keys(depart_date)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#flightsDispatchedTime').send_keys(depart_time)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
         globalvar.set_value('FlightNo', flight_no)
-        self.driver.switch_to.parent_frame()
-        utils.switch_exist_frame(self.driver, 'customerCall.do', '客户')
+        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
+        utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'customerCall.do', '客户')
 
     def orderExpress(self, ori_city, ori_addr, des_city, des_addr):
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#startName-suggest>div[lotparent]')))
         try:
-            self.driver.find_element(By.ID, 'startName').click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div[lotparent]')))
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
+            globalvar.GLOBAL_DRIVER.find_element(By.ID, 'startName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div[lotparent]')))
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
              '//*[@id="startName-suggest"]/div[@text="' + ori_city + '"]')), '起始城市无法获取').click()
         except TimeoutException:  # 碰到点击城市方位时出来城际方位-->还是会超时异常，疑惑？
-            self.driver.find_element_by_id('startAddr').click()
-            self.driver.find_element(By.ID, 'startName').click()
-            WebDriverWait(self.driver, 5).until(
+            globalvar.GLOBAL_DRIVER.find_element_by_id('startAddr').click()
+            globalvar.GLOBAL_DRIVER.find_element(By.ID, 'startName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div[lotparent]')))
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
                                                                                   '//*[@id="startName-suggest"]/div[@text="' + ori_city + '"]')),
                                                 '起始城市无法获取').click()
-        we_ori_addr = self.driver.find_element_by_id('startAddr')
+        we_ori_addr = globalvar.GLOBAL_DRIVER.find_element_by_id('startAddr')
         try:
             we_ori_addr.click()
-            WebDriverWait(self.driver, 3).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.presence_of_all_elements_located((By.XPATH, '//*[@id="start-lists-penal"]/li')))
         except TimeoutException:
             we_ori_addr.click()
-            WebDriverWait(self.driver, 3).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.presence_of_all_elements_located((By.XPATH, '//*[@id="start-lists-penal"]/li')))
         try:
             we_ori_addr.send_keys(ori_addr)
         except StaleElementReferenceException:
-            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(we_ori_addr)).send_keys(ori_addr)
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located(we_ori_addr)).send_keys(ori_addr)
         # 下句偶尔超时异常，未知原因
-        WebDriverWait(self.driver, 15).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="start-lists-penal"]/li[1]')), '起点POI无法获取').click()
 
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//div[@id="endsName-suggest"]/div')))
-        self.driver.find_element_by_id('endsName').click()
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.ID, 'endsName-suggest')))
-        WebDriverWait(self.driver, 5).until_not(
+        globalvar.GLOBAL_DRIVER.find_element_by_id('endsName').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.ID, 'endsName-suggest')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until_not(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="start-lists-penal"]/li[1]')), '起点信息还没消失')
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
         '//*[@id="endsName-suggest"]/div[@text="' + des_city + '"]')), '终点城市无法获取').click()
-        we_des_addr = self.driver.find_element_by_id('endAddr')
-        WebDriverWait(self.driver, 10).until(
+        we_des_addr = globalvar.GLOBAL_DRIVER.find_element_by_id('endAddr')
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal')))  # 2021-7-9，添加
         we_des_addr.click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//*[@id="end-lists-penal"]/li')))
         we_des_addr.send_keys(des_addr)
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
             '终点POI无法获取').click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.invisibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
             '终点下拉POI超时不消失')
 
     def orderHelpDrive(self, city, ori_addr, des_addr):
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//div[@id="startName-suggest"]/div')))
         try:
-            self.driver.find_element(By.ID, 'startName').click()
-            WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest')))
+            globalvar.GLOBAL_DRIVER.find_element(By.ID, 'startName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest')))
         except TimeoutException:
-            self.driver.find_element(By.ID, 'startName').click()
-            WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest')))
-        WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.XPATH,
+            globalvar.GLOBAL_DRIVER.find_element(By.ID, 'startName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
          '//*[@id="startName-suggest"]/div[@text="' + city + '"]')), '起始方位无法获取').click()
-        we_ori_addr = self.driver.find_element_by_id('startAddr')
+        we_ori_addr = globalvar.GLOBAL_DRIVER.find_element_by_id('startAddr')
         we_ori_addr.click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//*[@id="start-lists-penal"]/li')))
         we_ori_addr.send_keys(ori_addr)
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="start-lists-penal"]/li[1]')), '起点POI无法获取').click()
-        WebDriverWait(self.driver, 5).until_not(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until_not(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="start-lists-penal"]/li[1]')), '起点推荐信息长时间没消失')
-        we_des_addr = self.driver.find_element_by_id('endAddr')
+        we_des_addr = globalvar.GLOBAL_DRIVER.find_element_by_id('endAddr')
         we_des_addr.click()
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//*[@id="end-lists-penal"]/li')))
         we_des_addr.send_keys(des_addr)
-        WebDriverWait(self.driver, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
             '终点POI无法获取').click()
 
@@ -330,9 +330,9 @@ class FuncCustomerCall:
         """
         if date != "今天" and date != "":
             xpath = '//div/label[text()=' + "\"" + date + "\"" + ']'
-            self.driver.find_element(By.XPATH, xpath).click()
+            globalvar.GLOBAL_DRIVER.find_element(By.XPATH, xpath).click()
         if time != '':
-            self.driver.execute_script("$('#input-time').val('" + time + "')")
+            globalvar.GLOBAL_DRIVER.execute_script("$('#input-time').val('" + time + "')")
 
     def selectPCount(self, num):
         """
@@ -341,7 +341,7 @@ class FuncCustomerCall:
         :return:
         """
         xpath = '//span[@id="peopleCount"]/i/input[@value=' + "\"" + str(num) + "\"" + ']'
-        self.driver.find_element(By.XPATH, xpath).click()
+        globalvar.GLOBAL_DRIVER.find_element(By.XPATH, xpath).click()
 
     def selectECount(self, num):
         """
@@ -350,10 +350,10 @@ class FuncCustomerCall:
         :return:
         """
         xpath = '//div[@id="fastLinePeopleCount"]/i/input[@value=' + "\"" + str(num) + "\"" + ']'
-        self.driver.find_element(By.XPATH, xpath).click()
+        globalvar.GLOBAL_DRIVER.find_element(By.XPATH, xpath).click()
 
     def select_time_long(self, id, text):
-        s = self.driver.find_element_by_id(id)
+        s = globalvar.GLOBAL_DRIVER.find_element_by_id(id)
         Select(s).select_by_visible_text(text)
 
     def commit(self, pricetip_flag=True):
@@ -362,37 +362,70 @@ class FuncCustomerCall:
         :return:
         """
         if pricetip_flag:
-            WebDriverWait(self.driver, 15).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
                 EC.text_to_be_present_in_element((By.XPATH, '//*[@id="priceTips"]'), '预估花费'), '获取价格失败')
 #        sleep(0.5)  # added by 2021-7-5 市内订单偶发下单不成功情形
-        self.driver.execute_script("$('#submitAll').click()")
-        msg_text = utils.wait_for_laymsg(self.driver)
+        globalvar.GLOBAL_DRIVER.execute_script("$('#submitAll').click()")
+        msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
         return msg_text
 
-    def checkitem(self, str_filter, by_phone = None):
+    def checkitem(self, order_type, ori, des, customer_phone, by_phone=None):
         """
         确认目标订单的位置（当账号有较多的预约订单时【超过5单】有可能获取不到）
-        :param str_filter: 订单类型
+        :param order_type: 订单类型
+        :param customer_phone: 下单电话
+        :param by_phone: 乘客电话
         :return: 客户来电页订单所在行数，匹配不到返回0
         """
-        try:
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#call-see-order'))).click()
-        except StaleElementReferenceException:
-            sleep(0.5)
-            WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, '#call-see-order'))).click()
-        sleep(2)
-        b_match = False
-        for i in range(1, len(self.driver.find_elements_by_css_selector('#callOrderPage>table>tbody>tr'))+1):
-            if str_filter != '快巴':
-                if str_filter == utils.get_cell_content(self.driver, '#callOrderPage>table', i, 2):
-                    b_match = True
-                    break
-            else:
-                if str_filter == utils.get_cell_content(self.driver, '#callOrderPage>table', i, 2) and by_phone == utils.get_cell_content(self.driver, '#callOrderPage>table', i, 4):
-                    b_match = True
-                    break
-        return i if b_match else 0
+        i = 0
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '订单管理', 'orderManage.do')
+        if argv[1] != 'TEST':  # 8.16晚，灰度和正式环境在没有输入线路下，搜索效率很低
+            if not getattr(self, 'input_od_flag', False):
+                utils.input_ori_des(globalvar.GLOBAL_DRIVER, "XMC", "361000", "XM", "361000")
+                setattr(self, 'input_od_flag', True)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '#more1>div>div.layui-input-inline>input#phone')))
+        globalvar.GLOBAL_DRIVER.execute_script("$('#phone').val(" + customer_phone + ")")
+        globalvar.GLOBAL_DRIVER.execute_script("$('#btnQuery').click()")
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#data_table>tbody>tr')))
+        for i in range(1, len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#data_table>tbody>tr')) + 1):
+            actual_type = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 2)
+            actual_ori = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 9)
+            actual_des = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 10)
+            if order_type == actual_type and ori in actual_ori and des in actual_des:
+                setattr(self, "b_match", True)
+                break
+        return i if getattr(self, "b_match", False) else 0
+
+    def checkitem_bus(self, flight_no, customer_phone, by_phone):
+        """
+        确认班线目标订单的位置（当账号有较多的预约订单时【超过5单】有可能获取不到）
+        :param flight_no: 班次号
+        :param customer_phone: 下单电话
+        :param by_phone: 乘客电话
+        :return: 客户来电页订单所在行数，匹配不到返回0
+        """
+        i = 0
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER,  '班线管理', '班线订单管理', 'flightsOrderManager.do')
+        if argv[1] != 'TEST':  # 8.16晚
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selLine').click()  # 8.16晚
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname$="厦门测试班线"]'))).click()  # 8.16晚
+        we_phone = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#phone')))
+        we_phone.clear()
+        we_phone.send_keys(customer_phone)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, '#data_table>tbody>tr')))
+        for i in range(1, len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#data_table>tbody>tr')) + 1):
+            actual_flight_no = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 7)
+            actual_by_phone = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 4)
+            if flight_no == actual_flight_no and by_phone == actual_by_phone:
+                break
+            elif i == len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#data_table>tbody>tr')):
+                log.logger.error(f'班线列表里没有找到对应的订单！')
+                i = 0
+        return i
 
     def create_order(self, order_id, order_type, appoint_time, phone, car_type=CarType.ANY, count=1):
         new_order = Order(order_id)
@@ -407,15 +440,26 @@ class FuncCustomerCall:
         globalvar.add_order(new_order)
 
     def save_order(self, index, order_type, car_type=CarType.ANY):
-        css = '#callOrderPage>table>tbody>tr:nth-child({})'.format(index)
-        '''
-        if len(self.driver.find_elements_by_css_selector('#callOrderPage>table>tbody>tr')) > 1:
-            css = '#callOrderPage>table>tbody>tr:nth-child({})'.format(index)
+        assert index != 0, f'列表里没有指定的{order_type}新订单'
+        css = '#data_table>tbody>tr:nth-child({})'.format(index)
+        order_id = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css).get_attribute('order-list-id')
+        appoint_time = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(8)').text
+        phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(3)').text
+        if order_type != '快巴':
+            count_ = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(6)').text
         else:
-            css = '#callOrderPage>table>tbody>tr'
+            count_ = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(5)').text
+        self.create_order(order_id, order_type, appoint_time, phone, car_type, count_)
         '''
-        order_id = self.driver.find_element_by_css_selector(css).get_attribute('order-id')
-        appoint_time = self.driver.find_element_by_css_selector(css + '>td:nth-child(1)').text
-        count = self.driver.find_element_by_css_selector(css + '>td:nth-child(3)').text
-        phone = self.driver.find_element_by_css_selector(css + '>td:nth-child(4)').text
+        css = '#callOrderPage>table>tbody>tr:nth-child({})'.format(index)
+        order_id = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css).get_attribute('order-id')
+        appoint_time = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(1)').text
+        count = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(3)').text
+        phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(4)').text
         self.create_order(order_id, order_type, appoint_time, phone, car_type, count)
+        '''
+
+    def get_ori_des(self):
+        ori = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startAddr'))).get_attribute('addr_hidden')
+        des = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#endAddr'))).get_attribute('addr_hidden')
+        return ori, des
