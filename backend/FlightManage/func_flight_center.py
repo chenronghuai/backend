@@ -152,7 +152,9 @@ class FuncFlightCenter:
             setattr(self, 'new_driver', driver_)
             setattr(self, 'new_driver_flag', True)
             globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
-        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div>a.layui-layer-btn0').click()
+            sleep(2)  # 非测试环境，以前语句经常超时，switch_to.parent_frame()似乎需要等待？
+#        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div>a.layui-layer-btn0').click()
+        globalvar.GLOBAL_DRIVER.execute_script("$('div>a.layui-layer-btn0').click()")
         msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
         if '操作成功' in msg_text:
             if getattr(self, 'new_driver_flag'):
@@ -267,7 +269,6 @@ class FuncFlightCenter:
     def add_bus_order(self, order_id):
         """
         补定制快线--补单页面操作
-        :param driver:
         :param order_id:订单ID
         :return:
         """
@@ -283,15 +284,17 @@ class FuncFlightCenter:
             else:
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.presence_of_element_located(
                     (By.XPATH, '//div[@class="fs-options"]/div[@class="fs-option"]/div[text()="厦门测试班线"]'))).click()
-            if argv[1] == 'STAGE':
+            if argv[1] != 'TEST':
                 sleep(3)
             try:
-                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+#                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+                globalvar.GLOBAL_DRIVER.execute_script("$('#btnQuery').click()")
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 20).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
             except:
                 sleep(5)
-                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+#                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+                globalvar.GLOBAL_DRIVER.execute_script("$('#btnQuery').click()")
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 20).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
             try:

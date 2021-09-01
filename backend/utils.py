@@ -543,11 +543,14 @@ def wait_for_laymsg(driver):
     :param driver:webdriver对象
     :return: 弹框的文本内容，供后续流程判断
     """
-#    result_text = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
-#    result_text = WebDriverWait(driver, 15).until(
-#        EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text  # visibility时偶发超时，换成presence
-    WebDriverWait(driver, 15, 0.2).until(lambda driver: driver.find_element_by_css_selector('.layui-layer-content.layui-layer-padding').text != '')
-    result_text = driver.find_element_by_css_selector('.layui-layer-content.layui-layer-padding').text
+    def func(driver_):
+        try:
+            text = driver_.find_element_by_css_selector('.layui-layer-content.layui-layer-padding').text
+            return text
+        except StaleElementReferenceException:
+            return False
+
+    result_text = WebDriverWait(driver, 15, 0.1).until(func)
     try:
         WebDriverWait(driver, 15).until_not(lambda x: x.find_element_by_css_selector('.layui-layer-content.layui-layer-padding'))
     except:
