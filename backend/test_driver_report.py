@@ -32,7 +32,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         self.assertEqual(report_status, '报班')
 
     test_car = ["闽D223E5", "13345678965", "361000", "361000"],
-    prod_car = ["闽D888888", "17700000000", "361000", "361000"],
+    prod_car = ["闽D1DG68", "17700000000", "361000", "361000"],
 
     @unpack
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')

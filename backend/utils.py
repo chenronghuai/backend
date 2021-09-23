@@ -492,7 +492,7 @@ def input_ori_des(driver,  origin, ori_value, destination, des_value):
         we_ori.clear()
         WebDriverWait(driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#startName-suggest>div')))
-        driver.execute_script("$('div#endsName-suggest').html('')")  # 清除目的方位，用于判断起始方位确定后，目的建议方位返回时机
+        driver.execute_script("$('div#endsName-suggest').html('')")  # 清除目的方位，用于判断起始方位确定后，目的地建议方位返回时机
         we_ori.click()
         WebDriverWait(driver, 15).until(
             lambda x: x.execute_script("return $('#startName-suggest').css('display')") == 'block')
@@ -589,7 +589,6 @@ def make_sure_driver(driver, mother_menu, child_menu, src_link):
     :return:
     """
     if src_link in globalvar.opened_window_pool:
-#        switch_exist_frame(driver, src_link, title)
         switch_exist_frame(driver, src_link, globalvar.get_value(src_link))
     else:
         switch_frame(driver, mother_menu, child_menu, src_link)

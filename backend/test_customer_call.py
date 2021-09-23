@@ -164,7 +164,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
 #        sleep(1)
 #        self.driver.find_element(By.XPATH, '//div/label[text()="一口价（元）"]').click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until((EC.element_to_be_clickable((By.XPATH, '//div/label[text()="一口价（元）"]')))).click()
-        sleep(1.5)  # 等待，使得下单各要素齐全，否则无法提交成功
+        sleep(2)  # 等待，使得下单各要素齐全，否则无法提交成功
         ori, des = self.cc.get_ori_des()
         msg_text = self.cc.commit(pricetip_flag=False)
 

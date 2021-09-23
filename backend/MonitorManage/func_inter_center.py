@@ -3,7 +3,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from time import sleep
+from time import sleep, strftime
 import utils
 import log
 from utils import OrderType, DriverType, FoundRecordError, OrderStatus, CarType, FoundDriverError
@@ -15,12 +15,12 @@ class FuncInterCenter:
     current_oc_center = []
     oc_flag = True
     driver_node_css_dict = {
-        '专车排班': '#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]',
-        '已发车': '#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_dispatch"]'
+        '专车排班': '#intercityDriver>table>tbody>tr[page_type="driver_queue"]',
+        '已发车': '#intercityDriver>table>tbody>tr[page_type="driver_dispatch"]'
     }
     order_node_css_dict = {
-        '即时': '#orderImmediately>table>tbody#tdy_driver_queue.immediate-order',
-        '已派': '#orderImmediately>table>tbody#tdy_driver_queue.dispatched-order'
+        '即时': '#orderImmediately>table>tbody.immediate-order',
+        '已派': '#orderImmediately>table>tbody.dispatched-order'
     }
 
     def __init__(self):
@@ -230,10 +230,9 @@ class FuncInterCenter:
         info_dict = {}
         if category in ['专车排班', '系统排班', '专车核单', '已发车', '返程发车', 'U+在线']:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#driverList'))).click()
-#            globalvar.GLOBAL_DRIVER.execute_script("$('#intercityDriver>table>tbody#tdy_driver_queue').html('')")  # 各个分类下的司机定位没有细分，加此句规避取错记录
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
             try:
-                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, f'{self.driver_node_css_dict[category]}')))
+#                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, f'{self.driver_node_css_dict[category]}>td')))  # 偶发超时，不解？注释掉不影响流程
                 text_list = utils.get_operation_field_text(globalvar.GLOBAL_DRIVER, '#intercityDriver>table', f'{self.driver_node_css_dict[category]}:nth-child(1)')
             except StaleElementReferenceException:
                 sleep(2)
@@ -244,11 +243,9 @@ class FuncInterCenter:
 
         elif category in ['即时', '预约', '异常', '已派', '分享']:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderList'))).click()
-#            globalvar.GLOBAL_DRIVER.execute_script(f"$('{self.order_node_css_dict[category]}').html('')")  # 各个分类下的订单定位没有细分，加此句规避取错记录
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
-#            sleep(1)  # 以下定位tbody#tdy_driver_queue>tr暂不是唯一定位，加等待提高正确性，待能区分后再优化
             try:
-                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, f'{self.order_node_css_dict[category]}>tr')))
+#                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, f'{self.order_node_css_dict[category]}>tr>td')))  # 偶发超时，不解？注释掉不影响流程
                 text_list = utils.get_operation_field_text(globalvar.GLOBAL_DRIVER, '#orderImmediately>table', f'{self.order_node_css_dict[category]}>tr:nth-child(1)')
                 we_first_order = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(f'{self.order_node_css_dict[category]}>tr:nth-child(1)')
                 info_dict['oc'] = we_first_order.get_attribute('source_oc_code')
@@ -262,7 +259,9 @@ class FuncInterCenter:
             except TimeoutException:
                 log.logger.error(f'超时或者没有{category}订单的记录！')
                 raise IndexError
-
+        else:
+            log.logger.error(f'{category}--不支持的关键字！')
+            raise IndexError
         return text_list, info_dict
 
 

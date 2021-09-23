@@ -92,11 +92,10 @@ class FuncCustomerCall:
         if len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#startName-suggest>div')) > 1:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
                 '//*[@id="startName-suggest"]/div[@text="' + origin_region + '"]')), '起始方位无法获取').click()
-
-        sleep(0.5)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            lambda x: x.find_element_by_id('sel_origin').get_attribute('value') != '')  # 等待起点城市方位出现
+        sleep(0.5)  # 出现点击地址框没有弹出的几率性问题
         we_ori_addr = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#startAddr')
-#        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-#            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#start-lists-penal')))  # 7-9注释，貌似常在
         try:
             we_ori_addr.click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
@@ -111,7 +110,7 @@ class FuncCustomerCall:
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点POI无法获取').click()  # 此行代码偶发超时异常，增加时间试试效果
         except TimeoutException:
             we_ori_addr.send_keys(origin_addr)
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 20).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')),
                 '起点POI无法获取').click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
@@ -131,27 +130,36 @@ class FuncCustomerCall:
         """
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
-        globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').click()
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#endsName-suggest>div')))
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            lambda x: x.execute_script("return $('#endsName-suggest').css('display')") == 'block')
+        try:
+            globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#endsName-suggest>div')))
+        except TimeoutException:
+            globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, '#endsName-suggest>div')))
+#        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+#            lambda x: x.execute_script("return $('#endsName-suggest').css('display')") == 'block')
         globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').send_keys(des_region_index)
-        sleep(0.5)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: x.find_element_by_id('sel_destination').get_attribute('value') != '')  # 9.10,等待终点城市方位出现
+        sleep(0.5)  # 等待0.5秒还会出现点击地址框没有弹出的几率性问题，增加到1秒看看效果
         WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until_not(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#start-lists-penal>li:nth-child(1)')), '起点信息还没消失')
         we_des_addr = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#endAddr')
-#        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-#            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal')))   # 7-9注释，貌似常在
         try:
             we_des_addr.click()
+            # 下句偶尔超时异常，未知原因
             WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         except TimeoutException:
+            globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').send_keys(Keys.BACKSPACE)
+            globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').send_keys(des_region_index)
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                lambda x: x.find_element_by_id('sel_destination').get_attribute('value') != '')
             we_des_addr.click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         we_des_addr.send_keys(des_addr)
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 20).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
             '#end-lists-penal>li:nth-child(1)')), '终点POI无法获取').click()
 
     def orderInnerCity(self, city_index, city_region, ori_addr, des_addr):
@@ -285,6 +293,7 @@ class FuncCustomerCall:
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.presence_of_all_elements_located((By.XPATH, '//*[@id="end-lists-penal"]/li')))
         we_des_addr.send_keys(des_addr)
+        # 下句偶尔超时异常，未知原因
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
             '终点POI无法获取').click()

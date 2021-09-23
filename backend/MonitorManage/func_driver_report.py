@@ -43,7 +43,6 @@ class FuncDriverReport:
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))  # 等待蒙层消失
         globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#query_driver').click()
         try:
-#            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody>tr')))
             WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(lambda x: len(x.find_elements_by_css_selector('tbody>tr>td')) > 1)
         except TimeoutException:
             log.logger.error(f'列表找不到号码为{phone}的司机')
