@@ -12,7 +12,6 @@ import log
 class FuncLine:
 
     def __init__(self):
-#        self.driver = globalvar.get_value('driver')
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '人员车辆管理', '线路管理', 'line.do')
 
     def newInner(self, **kwargs):
@@ -419,15 +418,15 @@ class FuncLine:
                 pass
             WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                 EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector('#bakProvince>option'))>1)
             Select(province_sel).select_by_visible_text(province)
-            sleep(0.5)
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector('#bakCity>option'))>1)
             Select(city_sel).select_by_visible_text(city)
         else:
             Select(switch_sel).select_by_visible_text('否')
             Select(province_sel).select_by_visible_text('请选择省份')
             Select(city_sel).select_by_visible_text('请选择城市')
 
-    #    driver.find_element_by_css_selector('#btnSecSave').click()
         globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecSave').click()")
 
         msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)

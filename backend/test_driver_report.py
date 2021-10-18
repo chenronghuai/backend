@@ -13,7 +13,6 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
 
     @classmethod
     def setUpClass(cls):
-#        cls.driver = globalvar.get_value('driver')
         cls.fdr = FuncDriverReport()
         cls.__name__ = cls.__name__ + "（司机报班：司机通过手机号码、车牌号码进行报班，取消报班）"
 
@@ -22,7 +21,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         pass
 
     test_phone = [13328775856, "361000", "361000"], [13565498722, "361000", "361000"], [13345678968, "361000", "361000"]
-    prod_phone = [13345678965, "361000", "361000"], [18030142505, "361000", "361000"]
+    prod_phone = [13345678965, "361000", "361000"], [17700000000, "361000", "361000"]
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(*test_phone if argv[1] == 'TEST' else prod_phone)
@@ -32,7 +31,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         self.assertEqual(report_status, '报班')
 
     test_car = ["闽D223E5", "13345678965", "361000", "361000"],
-    prod_car = ["闽D1DG68", "17700000000", "361000", "361000"],
+    prod_car = ["闽D223E5", "18030142505", "361000", "361000"],
 
     @unpack
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')

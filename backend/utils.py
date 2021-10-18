@@ -411,25 +411,22 @@ def get_operation_field_text(driver, table_locator, record_locator):
     :return: 操作菜单的文本列表
     """
     operation_text_list = []
-    try:
-        field_list = [x.text for x in WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
-    except:
-        sleep(1)
-        field_list = [x.text for x in WebDriverWait(driver, 5).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
-    for index, text in enumerate(field_list):
-        if "操作" in text:
-            a_text_css = record_locator + f'>td:nth-child({index+1})' + '>a'
-            try:
-                we_operation_texts = WebDriverWait(driver, 5).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, a_text_css)))
-            except:
-                sleep(1)
-                we_operation_texts = WebDriverWait(driver, 5).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, a_text_css)))
-            for i in we_operation_texts:
-                temp = i.text
-                if temp.find('\n') != -1:  # 特殊处理类似'分享\n6'的文本
-                    temp = temp[:temp.find('\n')]
-                operation_text_list.append(temp)
+    we_fields = WebDriverWait(driver, 5, ignored_exceptions=(StaleElementReferenceException,)).until(
+        EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))
+
+    a_text_css = record_locator + f'>td:nth-child({len(we_fields)})>a'
+    we_operation_texts = WebDriverWait(driver, 5, ignored_exceptions=(StaleElementReferenceException,)).until(
+        EC.visibility_of_all_elements_located((By.CSS_SELECTOR, a_text_css)))
+
+    for i in we_operation_texts:
+        try:
+            temp = i.text
+        except StaleElementReferenceException:
+            sleep(1)
+            temp = i.text
+        if temp.find('\n') != -1:  # 特殊处理类似'分享\n6'的文本
+            temp = temp[:temp.find('\n')]
+        operation_text_list.append(temp)
     return operation_text_list
 
 
@@ -553,6 +550,8 @@ def wait_for_laymsg(driver):
     result_text = WebDriverWait(driver, 15, 0.1).until(func)
     try:
         WebDriverWait(driver, 15).until_not(lambda x: x.find_element_by_css_selector('.layui-layer-content.layui-layer-padding'))
+#        WebDriverWait(driver, 5, 0.1).until(lambda x: x.find_element_by_css_selector('.layui-layer.layui-layer-loading.layui-anim'))    # 大多数情况下该句会超时
+        WebDriverWait(driver, 10).until_not(lambda x: x.find_element_by_css_selector('.layui-layer.layui-layer-loading.layui-anim'))
     except:
         pass
     return result_text

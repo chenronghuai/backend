@@ -10,7 +10,6 @@ import log
 class FuncOrderManage:
 
     def __init__(self):
-#        self.driver = globalvar.get_value('driver')
         self.orders = list(filter(
             lambda order: order.order_type in [OrderType.CARPOOLING, OrderType.CHARACTER, OrderType.EXPRESS,
                                                OrderType.INNER, OrderType.HELPDRIVE,

@@ -2,7 +2,7 @@ import unittest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, TimeoutException
 from time import sleep
 from ddt import ddt, data, unpack
 import utils
@@ -12,19 +12,36 @@ from utils import TestMeta
 import globalvar
 from sys import argv
 from FlightManage.func_flight_center import FuncFlightCenter
+from PaVManage.func_line import FuncLine
 
 
 @ddt
 class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
 
+    TEST_LINE_ID = "350200_to_350200048"
+    PROD_LINE_ID = "350400_to_350400001"
+    LINE_ID = TEST_LINE_ID if argv[1] == 'TEST' else PROD_LINE_ID
+
     @classmethod
     def setUpClass(cls):
-#        cls.driver = globalvar.get_value('driver')
-        cls.__name__ = cls.__name__ + "（班次调度中心：快线司机排班，指派未排班司机即排班，指派快线订单给排班司机，快线司机补网约单、快线单）"
+        cls.__name__ = cls.__name__ + "（班次调度中心：快线司机排班，指派未排班司机即排班，指派快线订单给排班司机，快线司机补网约单、快线单，快线订单自动指派）"
         cls.fc = FuncFlightCenter()
+        cls.lm = FuncLine()
+        cls.resume_flag = True
+        cls.lm.queryLine(line_num=cls.LINE_ID)
+        route_status_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#line_table>tbody>tr>td:nth-child(11)'))).text
+        if route_status_text == '开启':  # 确保线路路由处于关闭状态
+            cls.fc.toggle_auto_appoint(cls.LINE_ID, False)
+            cls.resume_flag = False
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '班线管理', '班次调度中心', 'flightsOrderCenter.do')
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.resume_flag:  # 恢复线路到初始路由状态
+            cls.fc.toggle_auto_appoint(cls.LINE_ID, False)
 
     test_case_report = ["漳州运营中心", "高林SM专线", "老王测试专用车队", "13345678972"],
-    prod_case_report = ["漳州运营中心", "厦门测试班线", "测试，禁用", "16666666666"],
+    prod_case_report = ["漳州运营中心", "厦门测试班线", "测试，禁用", "14100010008"],
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(*test_case_report if argv[1] == 'TEST' else prod_case_report)
@@ -122,3 +139,30 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             log.logger.error(f'指派前人数{pre_add_count}，订单人数{order_.order_count}，指派后人数{after_add_count}')
         self.assertTrue(status)
 
+    test_case_line = ("350200_to_350200048",)
+    prod_case_line = ("350400_to_350400001",)
+
+    @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
+    @data(*test_case_line if argv[1] == 'TEST' else prod_case_line)
+    def test_auto_appoint(self, line_id):
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '人员车辆管理', '线路管理', 'line.do')
+        expect_iter = []
+        self.fc.toggle_auto_appoint(line_id)  # 开启线路自动指派
+        if argv[1] == 'TEST':
+            sleep(15)
+        else:
+            sleep(25)
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#orderList').click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 10, ignored_exceptions=(StaleElementReferenceException,)).until(EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr')))
+        fast_line_orders = list(filter(lambda order: order.order_type == OrderType.FASTLINE, globalvar.order_pool))
+        order_id_list = [order.order_id for order in fast_line_orders]
+        for id_ in order_id_list:
+            tr_locator = utils.get_record_by_attr(globalvar.GLOBAL_DRIVER, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr', 'order-id', id_)
+            status_text = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(tr_locator+'>td:nth-child(12)').text
+            if status_text == '已指派':
+                expect_iter.append(True)
+            else:
+                expect_iter.append(False)
+                break
+        self.assertTrue(all(expect_iter))

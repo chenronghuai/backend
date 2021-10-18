@@ -18,6 +18,14 @@ class Order(object):
         self.__appoint_time = time
 
     @property
+    def appoint_driver(self):
+        return self.__appoint_driver
+
+    @appoint_driver.setter
+    def appoint_driver(self, driver_):
+        self.__appoint_driver = driver_
+
+    @property
     def order_time(self):
         return self.__order_time
 
@@ -97,10 +105,18 @@ class Order(object):
     def order_phone(self, phone_):
         self.__order_phone = phone_
 
+    @property
+    def order_contact_phone(self):
+        return self.__order_contact_phone
+
+    @order_contact_phone.setter
+    def order_contact_phone(self, phone_):
+        self.__order_contact_phone = phone_
+
 
 class Driver(object):
-    def __init__(self, id, max_user, max_package, car_type, oc_center, register_phone, contact_phone, driver_type=utils.DriverType.NET_DRIVER):
-        self.__driver_id = id
+    def __init__(self, id_, max_user, max_package, car_type, oc_center, register_phone, contact_phone, driver_type=utils.DriverType.NET_DRIVER):
+        self.__driver_id = id_
         self.__max_user = max_user
         self.__max_package = max_package
         self.__car_type = car_type
@@ -179,4 +195,12 @@ class Driver(object):
     @contact_phone.setter
     def contact_phone(self, _contact_phone):
         self.__contact_phone = _contact_phone
+
+    @property
+    def car_num(self):
+        return self.__car_num
+
+    @car_num.setter
+    def car_num(self, _car_num):
+        self.__car_num = _car_num
 

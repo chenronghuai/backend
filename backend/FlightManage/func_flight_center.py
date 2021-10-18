@@ -8,15 +8,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from time import sleep
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, NoSuchElementException
 from common import Driver
 import log
+from PaVManage.func_line import FuncLine
 
 
 class FuncFlightCenter:
 
     def __init__(self):
-#        self.driver = globalvar.get_value('driver')
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '班线管理', '班次调度中心', 'flightsOrderCenter.do')
 
     def input_center_line(self, center, line):
@@ -97,9 +97,11 @@ class FuncFlightCenter:
             max_package = 0
             car_type = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(5)').text
             register_phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(3)').text
+            car_num = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(4)').text
             oc_center = '漳州运营中心'
             driver = Driver(driver_id, max_user, max_package, car_type, oc_center, register_phone, contact_phone=register_phone, 
                             driver_type=DriverType.BUS_DRIVER)
+            driver.car_num = car_num
 
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
             msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
@@ -142,6 +144,7 @@ class FuncFlightCenter:
                                                                  'iframe[src^="/flightsOrderCenter.do?method=toAssignOrChangeOrder"]'))
             driver_id = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody#driver-schedule-list>tr').get_attribute(
                 'driver-id')
+            car_num = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody#driver-schedule-list>tr'+'>td:nth-child(9)').text
             # 以下信息简单处理，没跟实际车辆相关
             max_user = 4
             max_package = 0
@@ -149,6 +152,7 @@ class FuncFlightCenter:
             oc_center = '漳州运营中心'
             driver_ = Driver(driver_id, max_user, max_package, car_type, oc_center, None, None,
                             driver_type=DriverType.BUS_DRIVER)
+            driver_.car_num = car_num
             setattr(self, 'new_driver', driver_)
             setattr(self, 'new_driver_flag', True)
             globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
@@ -287,7 +291,6 @@ class FuncFlightCenter:
             if argv[1] != 'TEST':
                 sleep(3)
             try:
-#                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
                 globalvar.GLOBAL_DRIVER.execute_script("$('#btnQuery').click()")
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 20).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
@@ -327,6 +330,11 @@ class FuncFlightCenter:
             globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
 
     def filter_bus_driver(self, order):
+        """
+        根据订单属性过滤出满足条件的第一个快线司机
+        :param order: 订单对象
+        :return: 第一个满足的快线司机
+        """
         bus_drivers = list(filter(lambda _driver: _driver.driver_type == DriverType.BUS_DRIVER, globalvar.driver_pool))
         if len(bus_drivers) == 0:
             raise IndexError
@@ -351,30 +359,50 @@ class FuncFlightCenter:
                         raise FoundDriverError(order.order_type)
 
     def search_extract_driver(self, driver_):
-
+        """
+        通过具体司机对象匹配特定班次的司机（司机列表存在一个司机多个班次的情形）
+        :param driver_:具体的司机对象
+        :return:满足班次司机的css定位
+        """
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#driverList'))).click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercityDriver>table>#tdy_driver_queue>tr[page_type="driver_queue"]')))
         info_text = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#intercityDriver>#pagebar>p').text
-        page_num = int(re.search(r'.+/(.+)', info_text).group(1))
+        page_num = int(re.search(r'.+/(.+)', info_text).group(1))  # 获取快线司机列表的页数
         for i in range(page_num):
             reported_driver_records = WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#intercityDriver>table>#tdy_driver_queue> tr[page_type="driver_queue"]')))
             for index, record in enumerate(reported_driver_records):
                 flight_no_css = f'div#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]:nth-child({index + 1})>td:nth-child(2)'
                 try:
-                    flight_no = WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, flight_no_css))).text
-                    record_driver_id = WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, f'#intercityDriver>table>#tdy_driver_queue > tr[page_type="driver_queue"]:nth-child({index + 1}'))).get_attribute('driver_id')
+                    flight_no = WebDriverWait(globalvar.GLOBAL_DRIVER, 15, ignored_exceptions=(StaleElementReferenceException,)).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, flight_no_css))).text  # 获取航班号（忽略系统刷新时DOM为空的异常，只能减少，还可能出现这样的异常）
                 except StaleElementReferenceException:
-                    flight_no = WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
+                    flight_no = WebDriverWait(globalvar.GLOBAL_DRIVER, 15, ignored_exceptions=(StaleElementReferenceException,)).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, flight_no_css))).text
-                    record_driver_id = WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR,
-                                                        f'#intercityDriver>table>#tdy_driver_queue > tr[page_type="driver_queue"]:nth-child({index + 1}'))).get_attribute('driver_id')
+                try:
+                    record_driver_id = WebDriverWait(globalvar.GLOBAL_DRIVER, 15, ignored_exceptions=(StaleElementReferenceException,)).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, f'#intercityDriver>table>#tdy_driver_queue > tr[page_type="driver_queue"]:nth-child({index + 1}'))).get_attribute('driver_id')  # 获取司机ID（忽略系统刷新时DOM为空的异常）
+                except StaleElementReferenceException:
+                    record_driver_id = WebDriverWait(globalvar.GLOBAL_DRIVER, 15, ignored_exceptions=(StaleElementReferenceException,)).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, f'#intercityDriver>table>#tdy_driver_queue > tr[page_type="driver_queue"]:nth-child({index + 1}'))).get_attribute('driver_id')
+
                 if record_driver_id == driver_.driver_id and flight_no == globalvar.get_value('FlightNo'):
                     driver_css = f'div#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]:nth-child({index + 1})'
                     return driver_css
             globalvar.GLOBAL_DRIVER.execute_script("$('#pagebar>a.next').click()")
             sleep(1)
+
+    def toggle_auto_appoint(self, line_id, auto_flag=True):
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, "人员车辆管理", "线路管理", "line.do")
+        self.lf = FuncLine()
+        self.lf.queryLine(line_num=line_id)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#line_table>tbody>tr')))
+        route_status_text = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#line_table', 1, 11)
+        if auto_flag and route_status_text == '关闭' or not auto_flag and route_status_text == '开启':
+            utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', line_id, '开路由/关路由')
+            globalvar.GLOBAL_DRIVER.switch_to.default_content()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
+
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '班线管理', '班次调度中心', 'flightsOrderCenter.do')

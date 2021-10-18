@@ -1,4 +1,4 @@
-from test_driver_report import TestDriverReport
+
 from pathlib import Path
 import unittest
 import HTMLTestRunner
@@ -9,6 +9,7 @@ from sys import argv
 import login
 import globalvar
 import log
+from test_driver_report import TestDriverReport
 from test_customer_call import TestCustomerCall
 from test_inter_center import TestInterCenter
 from test_order_manage import TestOrderManage
@@ -33,9 +34,11 @@ def action_login():
         globalvar.set_value('start_time',
                             f'{localtime(time.time()).tm_year}-{localtime(time.time()).tm_mon}-{localtime(time.time()).tm_mday} {localtime(time.time()).tm_hour}:{localtime(time.time()).tm_min}:{localtime(time.time()).tm_sec}')  # 用于过滤短信时间
         login.login(argv[1], argv[2])
+        globalvar.init_line()
 
 
 def action_quit():
+    globalvar.teardown_line()
     globalvar.get_value('driver').quit()
 
 
@@ -94,7 +97,7 @@ if __name__ == '__main__':
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestSms))
         '''
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightsManage))
-
+        
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestLine))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPermission))

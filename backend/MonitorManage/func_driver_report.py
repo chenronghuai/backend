@@ -15,7 +15,6 @@ class FuncDriverReport:
     is_phone = True
 
     def __init__(self):
-#        self.driver = globalvar.get_value('driver')
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '司机报班', 'driverReport.do')
 
     def report_action(self, ori_val, des_val):
@@ -56,6 +55,7 @@ class FuncDriverReport:
 
         # 添加司机进池
         driver_id = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr').get_attribute('data-uid')
+        car_num = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(3)').text
         license_text = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(11)').text
         max_user = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(1))
         max_package = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(2))
@@ -64,6 +64,7 @@ class FuncDriverReport:
         car_type = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(7)').text
         oc_center = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(14)').text
         driver = Driver(driver_id, max_user, max_package, car_type, oc_center, register_phone, contact_phone)
+        driver.car_num = car_num
         globalvar.add_driver(driver)
         return globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(10)').text
 
@@ -102,6 +103,7 @@ class FuncDriverReport:
         # 添加司机进池
         css_record = 'tbody>tr:nth-child({})'.format(i)
         driver_id = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css_record).get_attribute('data-uid')
+        car_num = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(3)').text
         license_text = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css_record+'>td:nth-child(11)').text
         max_user = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(1))
         max_package = int(re.search(r'(\d+)\D+(\d+)\D+', license_text).group(2))
@@ -110,6 +112,7 @@ class FuncDriverReport:
         car_type = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css_record+'>td:nth-child(7)').text
         oc_center = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css_record+'>td:nth-child(14)').text
         driver = Driver(driver_id, max_user, max_package, car_type, oc_center, register_phone=register_phone, contact_phone=contact_phone)
+        driver.car_num = car_num
         globalvar.add_driver(driver)
         css_goal = css_record+'>td:nth-child(10)'
         return globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css_goal).text

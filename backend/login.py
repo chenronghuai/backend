@@ -26,7 +26,7 @@ def login(url_section, user_section, main_flag=True):
         globalvar.GLOBAL_DRIVER = driver
         driver.get(utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl'))
     except WebDriverException:
-        log.logger.critical(f"服务器{utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl')}没有反应")
+        log.logger.critical(f"服务器{utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl')}没有反应！请确认浏览器与驱动是否匹配！")
         exit(1)
     driver.maximize_window()
     try:

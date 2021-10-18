@@ -27,7 +27,6 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'customerCall.do', '客户')  # 打开“客户来电”与“订单管理”2个窗口，把活动窗口切回客户来电”页面
         cls.__name__ = cls.__name__ + "（客户来电下单：城际拼车、城际包车、小件快递、市内用车、多日包车、快线【新增班次】、代驾）"
 
-
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_carpooling.json' if argv[3] == 'flow' else '.\\testcase\\order_carpooling1.json')
     def test_order_carpooling(self, phone, by_phone, origin_region_index, origin_region, origin_addr, des_region_index, des_addr, date, time, count, flow):
@@ -226,7 +225,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'多日包车订单下单失败，msg={msg_text}')
             assert False
-    
+
     test_case = ["14759250515", "13328775856", "福建省|厦门市|350200", "高林", "福建省|厦门市|350200", "中医院", "1", "T"],
     prod_case = ["14759250515", "13328775856", "福建省|三明市|350400", "大田汽车站", "福建省|三明市|350400", "大田行政服务中心", "1", "T"],
 
@@ -297,10 +296,10 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
             else:
                 log.logger.debug(f'快线订单下单失败，msg={msg_text}')
                 assert False
-    
+
     test_case = ["14759250515", "5603293", "厦门市|xmsndj",  "软件园二期", "软件园观日路24号", "T"],
     prod_case = ["14759250515", "5603293", "厦门市|xmsdj",  "软件园二期", "软件园观日路24号", "T"],
-
+    
     @unittest.skipIf(argv[3] != 'flow' or argv[1] != 'TEST', '非流程或测试环境不跑')
     @data(*test_case if argv[1] == 'TEST' else prod_case)
     @unpack
@@ -335,7 +334,6 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'代驾订单下单失败，msg={msg_text}')
             assert False
-
 
 
 

@@ -13,6 +13,7 @@ import re
 import log
 from sys import argv
 from MonitorManage.func_inter_center import FuncInterCenter
+from PaVManage.func_line import FuncLine
 
 
 expect_text_dict = {
@@ -32,6 +33,9 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
     @classmethod
     def setUpClass(cls):
         cls.ic = FuncInterCenter()
+        cls.lm = FuncLine()
+
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '城际调度中心', 'orderCenterNew.do')
         cls.__name__ = cls.__name__ + "（城际调度中心：指派拼车、包车、货件，补单拼车、货件、快线，改派、发车功能，包车车型过滤，操作栏菜单，运营中心订单可视权限）"
 
     @unittest.skipIf(argv[1] != 'TEST', '非测试环境不跑')
@@ -139,7 +143,13 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                 id_list = [x.get_attribute('order-id') for x in appointed_orders]
             status = True if order.order_id in id_list else False
             self.assertTrue(status)
-            order.order_status = OrderStatus.APPOINTED if status else OrderStatus.WAITING
+#            order.order_status = OrderStatus.APPOINTED if status else OrderStatus.WAITING  # 9.26 修改,增加指派司机属性
+            if status:
+                order.order_status = OrderStatus.APPOINTED
+                order.appoint_driver = driver
+            else:
+                order.order_status = OrderStatus.WAITING
+                order.appoint_driver = None
         else:
             log.logger.debug(f'城际调度中心指派{order_type}失败，msg={getattr(self.ic, "appoint_result_text", "")}')
             assert False
@@ -223,21 +233,15 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '城际调度中心', 'orderCenterNew.do')  # 不加会机率性导致下句超时，不解？
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderList'))).click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="已派"]'))).click()
-#        globalvar.GLOBAL_DRIVER.execute_script("$('#orderImmediately>table>#tdy_driver_queue.dispatched-order').html('')")
-#        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.order-ti-con.on>div>div>#order-nav-query'))).click()
         we_appointed_orders = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'tbody.dispatched-order>tr')))  #
         global_order_id_list = [x.order_id for x in globalvar.order_pool]
         for i in range(len(we_appointed_orders)):
-            order_id = WebDriverWait(globalvar.GLOBAL_DRIVER, 10, ignored_exceptions=(NoSuchElementException, StaleElementReferenceException)).until(EC.visibility_of_element_located((By.CSS_SELECTOR, f'tbody.dispatched-order>tr:nth-child({(i+1)})'))).get_attribute('order-id')
-            '''
             try:
-                order_id = we_appointed_orders[i].get_attribute('order-id')
-            except StaleElementReferenceException:
-#                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'tbody.dispatched-order>tr')))
-                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
-                    EC.visibility_of_element_located((By.CSS_SELECTOR, 'tbody.dispatched-order>tr')))
-                order_id = we_appointed_orders[i].get_attribute('order-id')
-            '''
+                order_id = WebDriverWait(globalvar.GLOBAL_DRIVER, 20, ignored_exceptions=(StaleElementReferenceException,)).until(EC.visibility_of_element_located((By.CSS_SELECTOR, f'tbody.dispatched-order>tr:nth-child({(i+1)})'))).get_attribute('order-id')
+            except StaleElementReferenceException:  # 规避get_attribute时碰到系统刷新DOM为空(10.12,灰度环境以下except块碰到抛出stale...异常,等待时间改为20试试）
+                order_id = WebDriverWait(globalvar.GLOBAL_DRIVER, 20, ignored_exceptions=(StaleElementReferenceException,)).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, f'tbody.dispatched-order>tr:nth-child({(i + 1)})'))).get_attribute('order-id')
+
             if order_id not in global_order_id_list:
                 continue
             order = globalvar.get_order(order_id)
@@ -264,10 +268,12 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '城际调度中心', 'orderCenterNew.do')  # 不加这句，以下有可能超时，疑惑？
         depart_drivers = list(filter(lambda x: x.driver_type == DriverType.NET_DRIVER and x.oc_center in self.ic.current_oc_center, globalvar.driver_pool))
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#driverList'))).click()
-#        globalvar.GLOBAL_DRIVER.execute_script('$("#intercityDriver>table>tbody#tdy_driver_queue").html("")')
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.bbx-orderlist-nav>.nav-right.td-opera>a[title="专车排班"]'))).click()
-#        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#order-car-query'))).click()  # 8.27注释掉，注释前碰到下句超时
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]')))
+        try:  # 偶尔超时，应该与系统刷新有关？改为try结构试试 9.27
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]')))
+        except TimeoutException:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.bbx-orderlist-nav>.nav-right.td-opera>a[title="专车排班"]'))).click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#intercityDriver>table>tbody#tdy_driver_queue>tr[page_type="driver_queue"]')))
         utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#intercityDriver>table', '#intercityDriver>table>tbody>tr[page_type="driver_queue"]', 'driver-id', depart_drivers[index-1].driver_id, '发车')
         globalvar.GLOBAL_DRIVER.switch_to.default_content()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(

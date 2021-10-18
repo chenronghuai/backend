@@ -21,12 +21,11 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
     @classmethod
     def setUpClass(cls):
         cls.fastline_orders = list(filter(lambda x: x.order_type == OrderType.FASTLINE, globalvar.order_pool))
-#        globalvar.GLOBAL_DRIVER = globalvar.get_value('driver')
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '班线管理', '班线订单管理', 'flightsOrderManager.do')
         cls.__name__ = cls.__name__ + "（快线订单管理：快线订单检票、完单等操作）"
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
-    @data(1, 2, 3)
+    @data(1, 2, 3, 4)
     def test_operate_flow(self, index):
         global init_flag
         if init_flag:
@@ -90,7 +89,8 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
             if '已成功取消订单!' in msg_text:
                 globalvar.GLOBAL_DRIVER.execute_script("$('table#data_table>tbody>tr').html('')")
                 status_css = temp_css + '>td:nth-child(11)'
-                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+#                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#btnQuery'))).click()
                 actual_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, status_css))).text
                 self.assertEqual(actual_text, '客服取消')

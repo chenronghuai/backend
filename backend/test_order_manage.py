@@ -12,6 +12,7 @@ from utils import OrderType
 from utils import TestMeta, OrderStatus
 from sys import argv
 from MonitorManage.func_order_manage import FuncOrderManage
+from selenium.common.exceptions import StaleElementReferenceException
 
 
 @ddt
@@ -55,7 +56,10 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
                 assert False
 
             css_offcar = css + '>td:nth-child(21)>a[name="order-offcar"]'  # "下车"
-            operate_offcar_text = self.om.operate_dialog(css_offcar, '[src^="/orderManage.do?method=getOrderManageOffCar"]', '#todoSureBtn')
+            try:
+                operate_offcar_text = self.om.operate_dialog(css_offcar, '[src^="/orderManage.do?method=getOrderManageOffCar"]', '#todoSureBtn')
+            except TimeoutError:  # 10.09，灰度环境碰到超时
+                operate_offcar_text = self.om.operate_dialog(css_offcar, '[src^="/orderManage.do?method=getOrderManageOffCar"]', '#todoSureBtn')
             if '操作成功!' not in operate_offcar_text:
                 log.logger.error(f'下车操作失败，msg={operate_offcar_text}')
                 assert False
@@ -70,7 +74,11 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
             globalvar.GLOBAL_DRIVER.execute_script('$("table#data_table>tbody>tr").html("")')  #清空表内容，同步最新的订单状态
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
-            text_str = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
+            try:
+                text_str = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
+                        EC.visibility_of_element_located((By.CSS_SELECTOR, css_assert))).text
+            except StaleElementReferenceException:
+                text_str = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, css_assert))).text
             self.assertEqual(text_str, '已完成')
 

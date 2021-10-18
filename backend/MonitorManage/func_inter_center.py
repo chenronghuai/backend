@@ -24,7 +24,6 @@ class FuncInterCenter:
     }
 
     def __init__(self):
-#        self.driver = globalvar.get_value('driver')
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '城际调度中心', 'orderCenterNew.do')
         if argv[1] == 'TEST':
             self.input_center_line("厦门运营中心", "XMC", "361000", "XM", "361000")
@@ -226,39 +225,35 @@ class FuncInterCenter:
                         raise IndexError  # FoundDriverError(order.order_type)
 
     def get_operate_text(self, category):
-        text_list = []
         info_dict = {}
         if category in ['专车排班', '系统排班', '专车核单', '已发车', '返程发车', 'U+在线']:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#driverList'))).click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
             try:
-#                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, f'{self.driver_node_css_dict[category]}>td')))  # 偶发超时，不解？注释掉不影响流程
-                text_list = utils.get_operation_field_text(globalvar.GLOBAL_DRIVER, '#intercityDriver>table', f'{self.driver_node_css_dict[category]}:nth-child(1)')
-            except StaleElementReferenceException:
-                sleep(2)
                 text_list = utils.get_operation_field_text(globalvar.GLOBAL_DRIVER, '#intercityDriver>table', f'{self.driver_node_css_dict[category]}:nth-child(1)')
             except TimeoutException:
-                log.logger.error(f'超时或没有{category}司机的记录！')
-                raise IndexError
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
+                text_list = utils.get_operation_field_text(globalvar.GLOBAL_DRIVER, '#intercityDriver>table', f'{self.driver_node_css_dict[category]}:nth-child(1)')
+#                log.logger.error(f'获取不到{category}司机的记录！')
+#                raise IndexError
 
         elif category in ['即时', '预约', '异常', '已派', '分享']:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderList'))).click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
             try:
-#                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, f'{self.order_node_css_dict[category]}>tr>td')))  # 偶发超时，不解？注释掉不影响流程
                 text_list = utils.get_operation_field_text(globalvar.GLOBAL_DRIVER, '#orderImmediately>table', f'{self.order_node_css_dict[category]}>tr:nth-child(1)')
                 we_first_order = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(f'{self.order_node_css_dict[category]}>tr:nth-child(1)')
                 info_dict['oc'] = we_first_order.get_attribute('source_oc_code')
-            except StaleElementReferenceException:
-                sleep(2)
+            except TimeoutException:  # 9.27 超时原因：系统刷新碰到点击刷新，列表内容不会刷新成点击TAB的内容？改如下试试，注释之前超时代码
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="' + category + '"]'))).click()
                 text_list = utils.get_operation_field_text(globalvar.GLOBAL_DRIVER, '#orderImmediately>table',
                                                            f'{self.order_node_css_dict[category]}>tr:nth-child(1)')
                 we_first_order = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(
                     f'{self.order_node_css_dict[category]}>tr:nth-child(1)')
                 info_dict['oc'] = we_first_order.get_attribute('source_oc_code')
-            except TimeoutException:
-                log.logger.error(f'超时或者没有{category}订单的记录！')
-                raise IndexError
+#                log.logger.error(f'超时或者没有{category}订单的记录！')
+#                raise IndexError
         else:
             log.logger.error(f'{category}--不支持的关键字！')
             raise IndexError

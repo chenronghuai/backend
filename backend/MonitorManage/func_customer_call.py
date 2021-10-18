@@ -13,6 +13,7 @@ from common import Order
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import TimeoutException
+from PaVManage.func_line import FuncLine
 
 count = 1
 _create_flag = True
@@ -21,8 +22,8 @@ _create_flag = True
 class FuncCustomerCall:
 
     def __init__(self):
-#        self.driver = globalvar.get_value('driver')
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '客户来电', 'customerCall.do')
+#        self.lf = FuncLine()
 
     def getUserInfo(self, phone):
         globalvar.GLOBAL_DRIVER.execute_script("$('#userTypeDiv').html('')")
@@ -197,6 +198,21 @@ class FuncCustomerCall:
             EC.visibility_of_element_located((By.XPATH, '//*[@id="end-lists-penal"]/li[1]')),
             '终点POI无法获取').click()
 
+    def toggle_auto_appoint(self, auto_flag=True):
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, "人员车辆管理", "线路管理", "line.do")
+        line_id = '350200_to_350200048' if argv[1] == 'TEST' else '350400_to_350400001'
+        self.lf = FuncLine()
+        self.lf.queryLine(line_num=line_id)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#line_table>tbody>tr')))
+        route_status_text = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#line_table', 1, 11)
+        if auto_flag and route_status_text == '关闭' or not auto_flag and route_status_text == '开启':
+            utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', line_id, '开路由/关路由')
+            globalvar.GLOBAL_DRIVER.switch_to.default_content()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
+
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, "监控管理", "客户来电", "customerCall.do")
+
     def create_fastline_flight(self):
         """
         创建新班次，当前时间10分钟后的班次
@@ -254,13 +270,13 @@ class FuncCustomerCall:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
              '//*[@id="startName-suggest"]/div[@text="' + ori_city + '"]')), '起始城市无法获取').click()
         except TimeoutException:  # 碰到点击城市方位时出来城际方位-->还是会超时异常，疑惑？
-            globalvar.GLOBAL_DRIVER.find_element_by_id('startAddr').click()
+            self.selectOrderType('快线')
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#startName-suggest>div[lotparent]')))
             globalvar.GLOBAL_DRIVER.find_element(By.ID, 'startName').click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div[lotparent]')))
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
-                                                                                  '//*[@id="startName-suggest"]/div[@text="' + ori_city + '"]')),
-                                                '起始城市无法获取').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="startName-suggest"]/div[@text="' + ori_city + '"]')),
+'起始城市无法获取').click()
         we_ori_addr = globalvar.GLOBAL_DRIVER.find_element_by_id('startAddr')
         try:
             we_ori_addr.click()
@@ -436,7 +452,7 @@ class FuncCustomerCall:
                 i = 0
         return i
 
-    def create_order(self, order_id, order_type, appoint_time, phone, car_type=CarType.ANY, count=1):
+    def create_order(self, order_id, order_type, appoint_time, phone, contact_phone, car_type=CarType.ANY, count=1):
         new_order = Order(order_id)
         new_order.order_type = order_type
         new_order.appoint_time = appoint_time
@@ -444,6 +460,7 @@ class FuncCustomerCall:
         new_order.order_count = int(count)
         new_order.order_status = OrderStatus.WAITING
         new_order.order_phone = phone
+        new_order.order_contact_phone = contact_phone
         new_order.car_type = car_type
         new_order.source_oc_code = utils.read_config_value(argv[2], 'oc')
         globalvar.add_order(new_order)
@@ -454,19 +471,12 @@ class FuncCustomerCall:
         order_id = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css).get_attribute('order-list-id')
         appoint_time = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(8)').text
         phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(3)').text
+        contact_phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(4)').text
         if order_type != '快巴':
             count_ = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(6)').text
         else:
             count_ = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(5)').text
-        self.create_order(order_id, order_type, appoint_time, phone, car_type, count_)
-        '''
-        css = '#callOrderPage>table>tbody>tr:nth-child({})'.format(index)
-        order_id = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css).get_attribute('order-id')
-        appoint_time = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(1)').text
-        count = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(3)').text
-        phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css + '>td:nth-child(4)').text
-        self.create_order(order_id, order_type, appoint_time, phone, car_type, count)
-        '''
+        self.create_order(order_id, order_type, appoint_time, phone, contact_phone, car_type, count_)
 
     def get_ori_des(self):
         ori = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startAddr'))).get_attribute('addr_hidden')

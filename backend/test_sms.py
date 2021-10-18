@@ -11,6 +11,7 @@ import globalvar
 from utils import OrderType, Node
 import log
 import time
+import re
 from time import strftime
 from SystemLog.func_sms_log import FuncSmsLog
 
@@ -25,7 +26,7 @@ class TestSms(unittest.TestCase, metaclass=TestMeta):
         end_time = strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))  # 当前时间
         cls.sl.search_log(14759250515, start_time, end_time)  # 输入确切时间段，防止跨日取不到前一天的短信
         cls.sms_content = cls.sl.get_content_by_field()  # 因乘客下单电话都为同一个号码，简单获取该号码下的短信内容
-        cls.__name__ = cls.__name__ + "（短信日志验证：乘客下单、指派、改派、消单，司机派单等短信节点）"
+        cls.__name__ = cls.__name__ + "（短信日志验证：乘客下单、指派、改派、消单，司机派单、安全号码等短信节点）"
 
     @data((OrderType.CARPOOLING, Node.ORDERED), (OrderType.CARPOOLING, Node.APPOINTED), (OrderType.CARPOOLING, Node.CANCELED), (OrderType.CARPOOLING, Node.REAPPOINTED), (OrderType.EXPRESS, Node.ORDERED), (OrderType.EXPRESS, Node.APPOINTED), (OrderType.EXPRESS, Node.CANCELED), (OrderType.FASTLINE, Node.ORDERED), (OrderType.FASTLINE, Node.APPOINTED))
     @unpack
@@ -80,6 +81,65 @@ class TestSms(unittest.TestCase, metaclass=TestMeta):
                     self.assertIn('寄件订单已取消', self.sms_content)
                 break
 
+            elif index == len(globalvar.order_pool) - 1:
+                log.logger.warning(f'短信日志：订单池里没有{order_type}、{order_node}节点类型的订单')
+                raise IndexError
+
+    @data((OrderType.CARPOOLING, Node.APPOINTED),(OrderType.FASTLINE, Node.APPOINTED))
+    @unpack
+    def test_safenum_sms(self, order_type, order_node):
+        for index, order in enumerate(globalvar.order_pool):
+            if order_node == Node.APPOINTED and order.order_status in [OrderStatus.APPOINTED]:
+                if order_type == OrderType.CARPOOLING:
+                    if argv[1] == 'TEST':
+                        actual_num = re.search(r'已指派司机.*手机号(.*)为您服务.*', self.sms_content).group(1)
+                    else:
+                        actual_num = re.search(r'已指派司机.*师傅(.*?)，.*', self.sms_content).group(1)
+                    self.assertNotEqual(actual_num, order.appoint_driver.contact_phone)
+                    break
+                elif order_type == OrderType.FASTLINE:
+                    if argv[1] == 'TEST':
+                        actual_num = re.search(r'您乘坐的.*手机号(.*)为您服务.*', self.sms_content).group(1)
+                    else:
+                        actual_num = re.search(r'您乘坐的.*，.*?，(.*)为您服务.*', self.sms_content).group(1)
+                    self.assertNotEqual(actual_num, order.appoint_driver.contact_phone)
+                    break
+            elif index == len(globalvar.order_pool) - 1:
+                log.logger.warning(f'短信日志：订单池里没有{order_type}、{order_node}节点类型的订单')
+                raise IndexError
+
+    @data((OrderType.CARPOOLING, Node.APPOINTED), (OrderType.EXPRESS, Node.APPOINTED), (OrderType.FASTLINE, Node.APPOINTED))
+    @unpack
+    def test_carnum_sms(self, order_type, order_node):
+        goal_orders = list(filter(lambda order_: order_.order_contact_phone == '14759250515' and order_.order_status == OrderStatus.APPOINTED, globalvar.order_pool))
+        for index, order in enumerate(goal_orders):
+            if order_node == Node.APPOINTED:
+                if order_type == OrderType.CARPOOLING:
+                    if argv[1] == 'TEST':
+                        expect_sms = f"已指派司机.+?，车牌{order.appoint_driver.car_num}，手机号\d+?为您服务"
+                    else:
+                        expect_sms = f"已指派司机.+?，{order.appoint_driver.car_num}，\d+?为您服务"
+                    result = re.search(expect_sms, self.sms_content)
+                    self.assertTrue(result)
+                    break
+
+                elif order_type == OrderType.EXPRESS:
+                    if argv[1] == 'TEST':
+                        expect_sms = f"已指派司机.+，{order.appoint_driver.car_num}为您服务"
+                    else:
+                        expect_sms = f"已指派司机.+，{order.appoint_driver.car_num}为您服务"
+                    result = re.search(expect_sms, self.sms_content)
+                    self.assertTrue(result)
+                    break
+
+                elif order_type == OrderType.FASTLINE:
+                    if argv[1] == 'TEST':
+                        expect_sms = f"您乘坐的.+，车牌{order.appoint_driver.car_num}，手机号\d+?为您服务"
+                    else:
+                        expect_sms = f"您乘坐的.+，{order.appoint_driver.car_num}，\d+?为您服务"
+                    result = re.search(expect_sms, self.sms_content)
+                    self.assertTrue(result)
+                    break
             elif index == len(globalvar.order_pool) - 1:
                 log.logger.warning(f'短信日志：订单池里没有{order_type}、{order_node}节点类型的订单')
                 raise IndexError
