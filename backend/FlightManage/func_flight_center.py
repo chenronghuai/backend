@@ -51,6 +51,7 @@ class FuncFlightCenter:
                 (By.CSS_SELECTOR, 'div#selLine-suggest>div[dataname$="' + line + '"]'))).click()
 
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#flightsDate').click()
+            sleep(1)  # 碰到凌晨第一个用例搜索不到班次，怀疑默认日期未更新，加等待试试
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, '.laydate-btns-confirm'))).click()
             # added 2021-5-20 只有一个班次会自动选择
@@ -58,13 +59,16 @@ class FuncFlightCenter:
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 2).until(EC.visibility_of_element_located(
                     (By.CSS_SELECTOR, 'input#selFlights[flights_no="' + globalvar.get_value('FlightNo') + '"]')))
 
-            except:
+            except TimeoutException:
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 10, ignored_exceptions=(StaleElementReferenceException,
+                                                                              )).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#selFlights-suggest>div')))
                 globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selFlights').click()
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.visibility_of_element_located(
                     (By.CSS_SELECTOR,
                      'div#selFlights-suggest>div[dataname="' + globalvar.get_value('FlightNo') + '"]'))).click()
+            except:  # 异常情况下关闭窗口以免影响后续操作
+                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnEsc').click()
 
-            #            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#chooseDriver').click()
             globalvar.GLOBAL_DRIVER.execute_script('$("#chooseDriver").click()')
             WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.frame_to_be_available_and_switch_to_it(
                 (By.CSS_SELECTOR, '[src^="/flightsOrderCenter.do?method=toChooseFlightsDriver"]')))
@@ -281,6 +285,7 @@ class FuncFlightCenter:
                 (By.CSS_SELECTOR, '[src^="/orderCtrl.do?method=getKbDriverAddOrdersPage"]')))
             WebDriverWait(globalvar.GLOBAL_DRIVER, 80).until(EC.visibility_of_all_elements_located(
                 (By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
+            '''
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
             if argv[1] == 'TEST':
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
@@ -307,6 +312,9 @@ class FuncFlightCenter:
                 sleep(1)
                 orders = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector(
                     'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')
+            '''
+            orders = WebDriverWait(globalvar.GLOBAL_DRIVER, 5, ignored_exceptions=(StaleElementReferenceException,)).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
+
             id_lists = [x.get_attribute('order-id') for x in orders]
             for index, id_ in enumerate(id_lists):
                 if id_ == order_id:

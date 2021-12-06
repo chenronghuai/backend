@@ -31,20 +31,18 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
         self.assertIn(args[1], line_info_list[13])
         self.assertNotIn(args[2], line_info_list[14])
 
-    test_line = ['361000_to_362300', '福建省', '漳州市', True], ['361000_to_362300', '', '', False], ['361000_to_362300', '福建省', '厦门市', True]
-    prod_line = ['361000_to_361000', '福建省', '漳州市', True],
+    test_line = ['361000_to_362300', '和多号平台', '福建省', '漳州市', True], ['361000_to_362300', '和多号平台', '', '', False], \
+                ['361000_to_362300', '和多号平台', '福建省', '厦门市', True]
+    prod_line = ['361000_to_361000', '和多号平台', '福建省', '漳州市', True],
 
     @unpack
     @data(*test_line if argv[1] == 'TEST' else prod_line)
     def test_safe_phone(self, *args):
         self.lf.queryLine(line_num=args[0])
         utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr',  'data-line-id', args[0], '安全号码')
-        self.lf.setSafePhone(args[1], args[2], args[3])
-        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr',  'data-line-id', args[0], '安全号码')
-        safe_dict = self.lf.getSafePhone()
-        self.assertEqual(safe_dict['province'], args[1])
-        self.assertEqual(safe_dict['city'], args[2])
-    
+        result_txt = self.lf.set_safe_phone(args[1], args[2], args[3], args[4])
+        self.assertEqual(result_txt, '保存成功')
+
     test_line = ['361000_to_362300', '5%', '6', '2', '5'], ['361000_to_362300', '10%', '5', '10%', '10%']
     prod_line = ['361000_to_361000', '3', '5', '2', '5'], ['361000_to_361000', '10%', '10%', '10%', '10%']
 
@@ -54,14 +52,15 @@ class TestLine(unittest.TestCase, metaclass=TestMeta):
         self.lf.queryLine(line_num=args[0])
         utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0], '手续费')
         result = self.lf.setCommission(carpool=args[1], dayscharacter=args[2], express=args[3], character=args[4])
-        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
-                                       args[0], '手续费')
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+        utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', args[0], '手续费')
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
             EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/lineCommission.do"]')))
         for i, k in result.items():
             self.assertIn(globalvar.GLOBAL_DRIVER.execute_script('return $("' + i + '").val()'), k)
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnEsc').click()
         globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
+        if argv[1] != 'TEST':
+            sleep(2)
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))

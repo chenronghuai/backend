@@ -16,7 +16,10 @@ from test_order_manage import TestOrderManage
 from test_flight_center import TestFlightCenter
 from test_flight_order_manage import TestFlightOrderManage
 from test_permission import TestPermission
+from test_user_manage import TestUserManage
+from test_customer_query import TestCustomerQuery
 from test_price import TestPrice
+from test_inter_price import TestInterPrice
 from EmailConfig.email import SendEmail
 from test_flights_manage import TestFlightsManage
 from test_line import TestLine
@@ -83,7 +86,7 @@ if __name__ == '__main__':
         suite_all = unittest.TestSuite()
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestDriverReport))
-
+        
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterCenter))
@@ -95,15 +98,21 @@ if __name__ == '__main__':
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightOrderManage))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestSms))
-        '''
+
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterPrice))
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightsManage))
-        
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestLine))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPermission))
+        
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerQuery))
+
+        suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestUserManage))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPrice))
-        '''
+
         if argv[3] == 'auto':
             runner.run(suite_one)
         elif argv[3] == 'flow':

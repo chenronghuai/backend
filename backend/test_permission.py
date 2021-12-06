@@ -24,7 +24,6 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
 
     @classmethod
     def setUpClass(cls):
-#        cls.driver = globalvar.get_value('driver')
         cls.temp_order_pool = globalvar.order_pool
         globalvar.order_pool.clear()
         cls.__name__ = cls.__name__ + "（权限管理：运营中心订单共享权限，订单管理中账号线路权限、订单完成车队权限）"
@@ -58,13 +57,25 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
 
             cu = FuncCustomerCall()
             sleep(1)
-            cu.getUserInfo("66666663")
-            cu.selectOrderType('城际拼车')
+            cu.get_user_info("66666663")
+            cu.select_order_type('城际拼车')
             cu.input_customer_phone("66666663")
             cu.selectInterOrigin("XM", "厦门市|XMCJ", "软件园二期")
             cu.selectInterDestination("XM", "观日路24号")
             cu.selectDate('', '')
             cu.selectPCount(1)
+            if globalvar.get_value('INTER_AUTH_FLAG') == '是':
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                  '#addPassenger'))).click()
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                  '#passenger-name-1'))).send_keys(
+                    '陈荣怀')
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                  '.psb-item-idcard'))).click()
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                  'a.layui-layer-btn0'))).click()
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, '.add-passenger-summary')))
             cu.commit()
             ori, des = cu.get_ori_des()
             i = cu.checkitem("拼车", ori, des, "66666663")
@@ -108,7 +119,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         om = getattr(self, 'om', FuncOcManage())
         user_attr_dict = sm.get_user_attr(utils.read_config_value(user, 'username'))
         if user_attr_dict['status'] in ['锁定', '不可用']:
-            sm.set_user_available(utils.read_config_value(user, 'username'))
+            sm.set_user_attr(utils.read_config_value(user, 'username'), available='可用')
         # 切回运营中心页面
         utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'operations-center.do', '运营中心管理')
         om.share_setup('厦门运营中心', '物流中心', flag)

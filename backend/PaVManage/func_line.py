@@ -2,11 +2,14 @@ import utils
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from time import sleep
 from sys import argv
 import globalvar
 import log
+import sys
+import traceback
 
 
 class FuncLine:
@@ -141,46 +144,105 @@ class FuncLine:
         we_linename.send_keys(line_name)
         status_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#isDel')
         Select(status_sel).select_by_visible_text(line_status)
-        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+#        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
+        globalvar.GLOBAL_DRIVER.execute_script("$('#btnQuery').click()")
         sleep(1)
 
     def modifyInterLine(self, **kwargs):
-        """
+        """"
         修改线路基本属性。用法：modifyInterLine(driver, 可变关键字参数)
         :param driver:
-        :param kwargs: 可变关键字参数，支持【show（是否前端显示）、c_phone（乘客客服电话）、d_phone（司机客服电话）、cash_pay（是否现金支付）、advance_pay（是否预支付）】关键字
+        :param kwargs: 可变关键字参数，支持【show（是否前端显示）、c_phone（乘客客服电话）、d_phone（司机客服电话）、cash_pay（是否现金支付）、advance_pay
+        （是否预支付）、identity_auth(身份认证)、allow_standby(允许司机查看报班排位)】关键字
         :return:
         """
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=editLineway"]')))
-        for k, v in kwargs.items():
-            if k == 'show':
-                show_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#isShow')
-                Select(show_sel).select_by_visible_text(v)
-            elif k == 'c_phone':
-                phone_css = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#serviceHotline')
-                phone_css.clear()
-                phone_css.send_keys(v)
-            elif k == 'd_phone':
-                phone_css = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#driverServiceHotline')
-                phone_css.clear()
-                phone_css.send_keys(v)
-            elif k == 'cash_pay':
-                cash_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#cash')
-                Select(cash_sel).select_by_visible_text(v)
-            elif k == 'advance_pay':
-                advance_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#prePay')
-                if '是' in v:
-                    pay_list = v.split(',')
-                    Select(advance_sel).select_by_visible_text(pay_list[0])
-                    WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#preCountDown'))).send_keys(pay_list[1])
+        try:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=editLineway"]')))
+            for k, v in kwargs.items():
+                if k == 'show':
+                    show_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#isShow')
+                    Select(show_sel).select_by_visible_text(v)
+                elif k == 'c_phone':
+                    phone_css = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#serviceHotline')
+                    phone_css.clear()
+                    phone_css.send_keys(v)
+                elif k == 'd_phone':
+                    phone_css = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#driverServiceHotline')
+                    phone_css.clear()
+                    phone_css.send_keys(v)
+                elif k == 'cash_pay':
+                    cash_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#cash')
+                    Select(cash_sel).select_by_visible_text(v)
+
+                elif k == 'advance_pay':
+                    advance_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#prePay')
+                    if '是' in v:
+                        pay_list = v.split(',')
+                        Select(advance_sel).select_by_visible_text(pay_list[0])
+                        we_time = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((
+                            By.CSS_SELECTOR, '#preCountDown')))
+                        we_time.clear()
+                        we_time.send_keys(pay_list[1])
+                    else:
+                        Select(advance_sel).select_by_visible_text(v)
+                elif k == 'identity_auth':
+                    switch_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#isAuthentication')
+                    Select(switch_sel).select_by_visible_text(v)
+                elif k == 'allow_standby':
+                    switch_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#driverViewStandbyRanking')
+                    Select(switch_sel).select_by_visible_text(v)
                 else:
-                    Select(advance_sel).select_by_visible_text(v)
-            else:
-                raise TypeError('{} got an unsupport argument {}'.format('modifyInterLine()', k))
-        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
-        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
-        sleep(1.5)
+                    raise TypeError('{} got an unsupport argument {}'.format('modifyInterLine()', k))
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
+            msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
+            return msg_text
+        except:
+            print(traceback.print_tb(sys.exc_info()[2]))
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnEsc').click()
+        finally:
+            globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
+
+    def modify_fast_line(self, **kwargs):
+        """"
+        修改快线线路基本属性。用法：modify_fast_line(driver, 可变关键字参数)
+        :param driver:
+        :param kwargs: 可变关键字参数，支持【level（线路等级）、available（是否可用）、show（是否显示）、identity_auth（身份认证）】关键字
+        :return:
+        """
+        try:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=editLineway"]')))
+            for k, v in kwargs.items():
+                if k == 'level':
+                    level_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div.itemDiv>div:nth-child('
+                                                                                     '6)>span>select.item-span-select')
+                    Select(level_sel).select_by_visible_text(v)
+
+                elif k == 'available':
+                    available_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div.itemDiv>div:nth-child('
+                                                                                         '7)>span>select.item-span-select')
+                    Select(available_sel).select_by_visible_text(v)
+
+                elif k == 'show':
+                    show_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div.itemDiv>div:nth-child('
+                                                                                    '8)>span>select.item-span-select')
+                    Select(show_sel).select_by_visible_text(v)
+                elif k == 'identity_auth':
+                    switch_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div.itemDiv>div:nth-child('
+                                                                                      '10)>span>select.item-span-select')
+                    Select(switch_sel).select_by_visible_text(v)
+                else:
+                    raise TypeError('{} got an unsupport argument {}'.format('modify_fast_line()', k))
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[value="下一步"]').click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'input[value="完成"]'))).click()
+            msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
+            return msg_text
+        except:
+            print(traceback.print_tb(sys.exc_info()[2]))
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[value="取消"]').click()
+        finally:
+            globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
 
     def setRoute(self, level='调度1.0'):
         """
@@ -233,9 +295,10 @@ class FuncLine:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
         except:
             pass
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
             EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.invisibility_of_element_located((By.CSS_SELECTOR,
+                                                                                             '.layui-layer-shade')))
 
     def setCommission(self, **kwargs):
         """
@@ -244,83 +307,84 @@ class FuncLine:
         :param kwargs: 可变参数，共支持4个关键字: 【拼车】carpool【多日包车】dayscharacter【包裹】express【包车】character，包车暂统一处理不按车型区分
         :return:
         """
-        assert_dict = {}
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/lineCommission.do"]')))
-        for k, v in kwargs.items():
-            assert isinstance(v, str), '参数值必须为字符串'
+        try:
+            assert_dict = {}
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/lineCommission.do"]')))
+            for k, v in kwargs.items():
+                assert isinstance(v, str), '参数值必须为字符串'
 
-            if k == 'carpool':
-                if v.find('%') != -1:
-                    v = v[:v.find('%')]
-                    globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="pinCheRadio"][value="1"]').click()
-                    css_percent = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#pinCheRadio_Text1')
-                    css_percent.clear()
-                    css_percent.send_keys(v)
-                    assert_dict['#pinCheRadio_Text1'] = v
+                if k == 'carpool':
+                    if v.find('%') != -1:
+                        v = v[:v.find('%')]
+                        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="pinCheRadio"][value="1"]').click()
+                        css_percent = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#pinCheRadio_Text1')
+                        css_percent.clear()
+                        css_percent.send_keys(v)
+                        assert_dict['#pinCheRadio_Text1'] = v
+                    else:
+                        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="pinCheRadio"][value="2"]').click()
+                        css_amount = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#pinCheRadio_Text2')
+                        css_amount.clear()
+                        css_amount.send_keys(v)
+                        assert_dict['#pinCheRadio_Text2'] = v
+
+                elif k == 'dayscharacter':
+                    if v.find('%') != -1:
+                        v = v[:v.find('%')]
+                        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="duoRiBaoCheRadio"][value="1"]').click()
+                        css_percent = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#duoRiBaoCheRadio_Text1')
+                        css_percent.clear()
+                        css_percent.send_keys(v)
+                        assert_dict['#duoRiBaoCheRadio_Text1'] = v
+                    else:
+                        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="duoRiBaoCheRadio"][value="2"]').click()
+                        css_amount = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#duoRiBaoCheRadio_Text2')
+                        css_amount.clear()
+                        css_amount.send_keys(v)
+                        assert_dict['#duoRiBaoCheRadio_Text2'] = v
+
+                elif k == 'express':
+                    if v.find('%') != -1:
+                        v = v[:v.find('%')]
+                        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="baoGuoRadio"][value="1"]').click()
+                        css_percent = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#baoGuoRadio_Text1')
+                        css_percent.clear()
+                        css_percent.send_keys(v)
+                        assert_dict['#baoGuoRadio_Text1'] = v
+                    else:
+                        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="baoGuoRadio"][value="2"]').click()
+                        css_amount = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#baoGuoRadio_Text2')
+                        css_amount.clear()
+                        css_amount.send_keys(v)
+                        assert_dict['#baoGuoRadio_Text2'] = v
+
+                elif k == 'character':
+                    if v.find('%') != -1:
+                        v = v[:v.find('%')]
+                        all_percent_radioes = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[type="radio"][value="1"]')
+                        for i in all_percent_radioes:
+                            i.click()
+                        css_percents = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[id$="Text1"]')
+                        for i in css_percents:
+                            i.clear()
+                            i.send_keys(v)
+                    else:
+                        all_amount_radioes = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[type="radio"][value="2"]')
+                        for i in all_amount_radioes:
+                            i.click()
+                        css_amounts = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[id$="Text2"]')
+                        for i in css_amounts:
+                            i.clear()
+                            i.send_keys(v)
+
                 else:
-                    globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="pinCheRadio"][value="2"]').click()
-                    css_amount = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#pinCheRadio_Text2')
-                    css_amount.clear()
-                    css_amount.send_keys(v)
-                    assert_dict['#pinCheRadio_Text2'] = v
+                    raise TypeError('{} got an unsupport argument-{}'.format('setCommission()', k))
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
+            utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
+        finally:
+            globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
 
-            elif k == 'dayscharacter':
-                if v.find('%') != -1:
-                    v = v[:v.find('%')]
-                    globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="duoRiBaoCheRadio"][value="1"]').click()
-                    css_percent = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#duoRiBaoCheRadio_Text1')
-                    css_percent.clear()
-                    css_percent.send_keys(v)
-                    assert_dict['#duoRiBaoCheRadio_Text1'] = v
-                else:
-                    globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="duoRiBaoCheRadio"][value="2"]').click()
-                    css_amount = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#duoRiBaoCheRadio_Text2')
-                    css_amount.clear()
-                    css_amount.send_keys(v)
-                    assert_dict['#duoRiBaoCheRadio_Text2'] = v
-
-            elif k == 'express':
-                if v.find('%') != -1:
-                    v = v[:v.find('%')]
-                    globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="baoGuoRadio"][value="1"]').click()
-                    css_percent = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#baoGuoRadio_Text1')
-                    css_percent.clear()
-                    css_percent.send_keys(v)
-                    assert_dict['#baoGuoRadio_Text1'] = v
-                else:
-                    globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input[name="baoGuoRadio"][value="2"]').click()
-                    css_amount = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('input#baoGuoRadio_Text2')
-                    css_amount.clear()
-                    css_amount.send_keys(v)
-                    assert_dict['#baoGuoRadio_Text2'] = v
-
-            elif k == 'character':
-                if v.find('%') != -1:
-                    v = v[:v.find('%')]
-                    all_percent_radioes = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[type="radio"][value="1"]')
-                    for i in all_percent_radioes:
-                        i.click()
-                    css_percents = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[id$="Text1"]')
-                    for i in css_percents:
-                        i.clear()
-                        i.send_keys(v)
-                else:
-                    all_amount_radioes = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[type="radio"][value="2"]')
-                    for i in all_amount_radioes:
-                        i.click()
-                    css_amounts = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('tr>td>input[id$="Text2"]')
-                    for i in css_amounts:
-                        i.clear()
-                        i.send_keys(v)
-
-            else:
-                raise TypeError('{} got an unsupport argument-{}'.format('setCommission()', k))
-        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
-        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         return assert_dict
 
     def setCancelTicket(self, *args):
@@ -393,7 +457,7 @@ class FuncLine:
             EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
 
-    def setSafePhone(self, province='福建省', city='厦门市', flag=True):
+    def set_safe_phone(self, supplier = '和多号平台', province='福建省', city='厦门市', flag=True):
         """
         设置安全号码。用法：setSafePhone(driver, province='福建省', city='厦门市', flag=True)
         :param driver:
@@ -402,60 +466,76 @@ class FuncLine:
         :param flag: True为设置安全号码，False为取消设置
         :return:
         """
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
-
-        switch_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#isSafeNumber')
-        province_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#bakProvince')
-        city_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#bakCity')
-
-        if flag:
-            Select(switch_sel).select_by_visible_text('是')
-            try:
-                globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
-                WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div>a.layui-layer-btn0'))).click()
-            except:
-                pass
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
+        try:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector('#bakProvince>option'))>1)
-            Select(province_sel).select_by_visible_text(province)
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector('#bakCity>option'))>1)
-            Select(city_sel).select_by_visible_text(city)
-        else:
-            Select(switch_sel).select_by_visible_text('否')
-            Select(province_sel).select_by_visible_text('请选择省份')
-            Select(city_sel).select_by_visible_text('请选择城市')
 
-        globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecSave').click()")
+            switch_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#isSafeNumber')
+            supplier_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#supplierId')
+            province_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#bakProvince')
+            city_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#bakCity')
 
-        msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
-        if msg_text != '保存成功':
-            log.logger.error(f'保存安全号码设置失败，msg={msg_text}')
-            raise IndexError
+            if flag:
+                Select(switch_sel).select_by_visible_text('是')
+                try:
+                    globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
+                    WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div>a.layui-layer-btn0'))).click()
+                except:
+                    pass
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
+                    EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
+                Select(supplier_sel).select_by_visible_text(supplier)
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector('#bakProvince>option'))>1)
+                Select(province_sel).select_by_visible_text(province)
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector('#bakCity>option'))>1)
+                Select(city_sel).select_by_visible_text(city)
+            else:
+                try:
+                    Select(switch_sel).select_by_visible_text('否')
+                    Select(province_sel).select_by_visible_text('请选择省份')
+                    Select(city_sel).select_by_visible_text('请选择城市')
+                except StaleElementReferenceException:
+                    sleep(2)
+                    Select(switch_sel).select_by_visible_text('否')
+                    Select(province_sel).select_by_visible_text('请选择省份')
+                    Select(city_sel).select_by_visible_text('请选择城市')
 
-        globalvar.GLOBAL_DRIVER.switch_to.default_content()
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do"]')))
-#        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()  # 此句理论上与上面2句同效果，不知为何此句会有问题
-        sleep(1.5)
+            globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecSave').click()")
 
+            msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
+            if msg_text != '保存成功':
+                log.logger.error(f'保存安全号码设置失败，msg={msg_text}')
+                raise IndexError
+            return msg_text
+        except:
+            globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
 
-    def getSafePhone(self):
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
-        safe_dict = {}
-        sleep(2)
-        issafe_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#isSafeNumber').val()")
-        province_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#bakProvince').val()")
-        city_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#bakCity').val()")
-        safe_dict['isSafe'] = issafe_text
-        safe_dict['province'] = province_text
-        safe_dict['city'] = city_text
-        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSecCancel').click()
-        globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
-        sleep(1.5)
-        return safe_dict
+        finally:
+            globalvar.GLOBAL_DRIVER.switch_to.default_content()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do"]')))
+            sleep(1.5)
+
+    def get_safe_phone(self):
+        try:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
+            safe_dict = {}
+            sleep(2)
+            issafe_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#isSafeNumber').val()")
+            province_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#bakProvince').val()")
+            city_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#bakCity').val()")
+            safe_dict['isSafe'] = issafe_text
+            safe_dict['province'] = province_text
+            safe_dict['city'] = city_text
+
+            return safe_dict
+        finally:
+            globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
+            globalvar.GLOBAL_DRIVER.switch_to.default_content()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do"]')))
+            sleep(1.5)
 
     def toggleLineStatus(self, line_id, *args):
         """
@@ -489,3 +569,39 @@ class FuncLine:
         for element in we_tds:
             line_info_list.append(element.text)
         return line_info_list
+
+    def get_inter_line_attr(self):
+        try:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=editLineway"]')))
+            attr_dict = {}
+            show_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#isShow>option[selected]').text()")
+            cash_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#cash>option[selected]').text()")
+            auth_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#isAuthentication>option[selected]').text()")
+            prepay_text = globalvar.GLOBAL_DRIVER.execute_script("return $('#prePay>option[selected]').text()")
+            standby_value = globalvar.GLOBAL_DRIVER.execute_script("return $('#driverViewStandbyRanking').val()")
+            standby_text = '是' if standby_value == '1' else '否'
+            attr_dict['show'] = show_text
+            attr_dict['cash'] = cash_text
+            attr_dict['auth'] = auth_text
+            attr_dict['prepay'] = prepay_text
+            attr_dict['standby'] = standby_text
+            return attr_dict
+        finally:
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnEsc').click()
+            globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
+
+    def get_fast_line_attr(self):
+        try:
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+                EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=editLineway"]')))
+            attr_dict = {}
+            auth_value = globalvar.GLOBAL_DRIVER.execute_script("return $('div.modifyN-item."
+                                                                "modifyN-item-long:nth-child(10)"
+                                                                ">span.item-span-text>.item-span-select').val()")
+            auth_text = '是' if auth_value == '1' else '否'
+            attr_dict['auth'] = auth_text
+            return attr_dict
+        finally:
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('.btn.del').click()
+            globalvar.GLOBAL_DRIVER.switch_to.parent_frame()

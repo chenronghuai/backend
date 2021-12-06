@@ -73,7 +73,7 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
             css_assert = css + '>td:nth-child(17)'
             globalvar.GLOBAL_DRIVER.execute_script('$("table#data_table>tbody>tr").html("")')  #清空表内容，同步最新的订单状态
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '#btnQuery'))).click()
             try:
                 text_str = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
                         EC.visibility_of_element_located((By.CSS_SELECTOR, css_assert))).text

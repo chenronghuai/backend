@@ -11,6 +11,8 @@ opened_window_pool = []
 appointed_driver_pool = []
 GLOBAL_DRIVER = None
 
+CLASSIC_PHONE_NUMBER = '66666663'
+
 TEST_INTERLINE_ID = "361000_to_361000"
 PROD_INTERLINE_ID = "361000_to_361000"
 INTERLINE_ID = TEST_INTERLINE_ID if argv[1] == 'TEST' else PROD_INTERLINE_ID
@@ -35,38 +37,57 @@ def init_line():
     lm.queryLine(line_num=INTERLINE_ID)
     utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                    INTERLINE_ID, '安全号码')
-    safe_info_dict = lm.getSafePhone()
+    safe_info_dict = lm.get_safe_phone()
     if safe_info_dict['isSafe'] == '0':  # 确保安全号码处于开启状态
         utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                        INTERLINE_ID, '安全号码')
-        lm.setSafePhone(flag=True, city='福州市')
+        lm.set_safe_phone(flag=True, city='福州市')
         set_value('INTER_RESUME_FLAG', True)
+
+    utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
+                                   INTERLINE_ID, '修改')
+    set_value('INTER_AUTH_FLAG', lm.get_inter_line_attr()['auth'])
 
     lm.queryLine(line_num=FASTLINE_ID)
     utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                    FASTLINE_ID, '安全号码')
-    safe_info_dict = lm.getSafePhone()
+    safe_info_dict = lm.get_safe_phone()
     if safe_info_dict['isSafe'] == '0':  # 确保安全号码处于开启状态
         utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                        FASTLINE_ID, '安全号码')
-        lm.setSafePhone(flag=True, city='福州市')
+        lm.set_safe_phone(flag=True, city='福州市')
         set_value('FAST_RESUME_FLAG', True)
+    # 关闭班线线路的身份认证，确保班线流程顺畅
+    utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
+                                   FASTLINE_ID, '修改')
+    if '是' == lm.get_fast_line_attr()['auth']:
+        utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
+                                       FASTLINE_ID, '修改')
+        lm.modify_fast_line(identity_auth='否')
+        set_value('FAST_AUTH_FLAG', True)
 
 
 def teardown_line():  # 恢复线路到原来的状态
     lm = FuncLine()
+    utils.make_sure_driver(GLOBAL_DRIVER, '人员车辆管理', '线路管理', 'line.do')
+    # 恢复城际线路的安全号码状态（关闭状态）
     if get_value('INTER_RESUME_FLAG'):
-        utils.make_sure_driver(GLOBAL_DRIVER, '人员车辆管理', '线路管理', 'line.do')
         lm.queryLine(line_num=INTERLINE_ID)
         utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                       INTERLINE_ID, '安全号码')
-        lm.setSafePhone(flag=False)
+        lm.set_safe_phone(flag=False)
+    # 恢复班线线路的安全号码状态（关闭状态）
     if get_value('FAST_RESUME_FLAG'):
-        utils.make_sure_driver(GLOBAL_DRIVER, '人员车辆管理', '线路管理', 'line.do')
         lm.queryLine(line_num=FASTLINE_ID)
         utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                        FASTLINE_ID, '安全号码')
-        lm.setSafePhone(flag=False)
+        lm.set_safe_phone(flag=False)
+    #  如果身份认证被关闭，恢复开启
+    if get_value('FAST_AUTH_FLAG'):
+        lm.queryLine(line_num=FASTLINE_ID)
+        utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
+                                       FASTLINE_ID, '修改')
+        lm.modify_fast_line(identity_auth='是')
 
 
 def set_value(key, value):

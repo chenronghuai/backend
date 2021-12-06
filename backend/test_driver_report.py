@@ -21,7 +21,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         pass
 
     test_phone = [13328775856, "361000", "361000"], [13565498722, "361000", "361000"], [13345678968, "361000", "361000"]
-    prod_phone = [13345678965, "361000", "361000"], [17700000000, "361000", "361000"]
+    prod_phone = [18030142505, "361000", "361000"], [17700000000, "361000", "361000"]
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @data(*test_phone if argv[1] == 'TEST' else prod_phone)
@@ -31,7 +31,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         self.assertEqual(report_status, '报班')
 
     test_car = ["闽D223E5", "13345678965", "361000", "361000"],
-    prod_car = ["闽D223E5", "18030142505", "361000", "361000"],
+    prod_car = ["闽DV7710", "13345678965", "361000", "361000"],
 
     @unpack
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
@@ -41,7 +41,7 @@ class TestDriverReport(unittest.TestCase, metaclass=utils.TestMeta):
         self.assertEqual(report_status, '报班')
 
     test_driver = (13565498722,)
-    prod_driver = (18030142505,)
+    prod_driver = (13345678965,)
 
     @data(*test_driver if argv[1] == 'TEST' else prod_driver)
     def test_driver_cancel_report(self, phone):

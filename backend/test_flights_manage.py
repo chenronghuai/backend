@@ -102,7 +102,8 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#flights_table>tbody>tr')))
-        utils.select_operation_by_field(globalvar.GLOBAL_DRIVER, 'table#flights_table', '班次号', self.flight_no, '删除')
+        utils.select_operation_by_field(globalvar.GLOBAL_DRIVER, 'table#flights_table', '班次号', self.flight_no, '删除',
+                                        '操作')
         globalvar.GLOBAL_DRIVER.switch_to.default_content()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, 'a.layui-layer-btn0'))).click()

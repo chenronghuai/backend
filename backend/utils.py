@@ -13,7 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from enum import Enum, unique
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, ElementClickInterceptedException
 
 
 class OrderType(object):
@@ -310,28 +310,59 @@ def get_record_by_field_value(driver, locator, td_val, value):
     """
     WebDriverWait(driver, 5).until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, locator)))
-    tds = driver.find_elements_by_css_selector(locator + '>thead>tr>th')
-    for index, val in enumerate(tds, 1):
-        if val.text == td_val:
+    text_list = [x.text for x in WebDriverWait(driver, 5).until(
+        EC.visibility_of_all_elements_located((By.CSS_SELECTOR, locator + '>thead>tr>th')))]
+    for index, val in enumerate(text_list, 1):
+        if td_val == val:
             records = driver.find_elements_by_css_selector(locator + '>tbody>tr')
             for i in range(len(records)):
                 css_td = 'td:nth-child({})'.format(index)
-                if records[i].find_element_by_css_selector(css_td).text == value:
+                if (WebDriverWait(driver, 5, ignored_exceptions=[StaleElementReferenceException]).until(EC.visibility_of(records[
+                    i].find_element_by_css_selector(css_td)))).text == value:
                     return locator + '>tbody>tr:nth-child({})'.format(i+1)
                 elif records[i].find_element_by_css_selector(css_td).text != value and i == len(records) - 1:
                     raise FoundRecordError(value, locator)
-        elif val.text != td_val and index == len(tds)-1:
+        elif td_val == val != td_val and index == len(text_list)-1:
             raise FoundRecordError(td_val, locator)
 
 
-def select_operation_by_field(driver, table_locator, field_name, value, opera_text):
-    """
+def get_record_by_multi_field_value(driver, locator, sour_dict):
+    WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, locator)))
+    tds = driver.find_elements_by_css_selector(locator + '>thead>tr>th')
+    records = driver.find_elements_by_css_selector(locator + '>tbody>tr')
+    value_dict = {}
+    for field, value in sour_dict.items():
+        for index, val in enumerate(tds, 1):
+            if val.text == field:
+                value_dict[index] = value
+                break
+            elif val.text != field and index == len(tds):
+                log.logger.error(f'该表没有"{field}"字段')
+                raise IndexError
+    for i in range(len(records)):
+        k = 0
+        for index_, value_ in value_dict.items():
+            css_td = 'td:nth-child({})'.format(index_)
+            if records[i].find_element_by_css_selector(css_td).text == value_:
+                k += 1
+                if k == len(value_dict):
+                    return locator + '>tbody>tr:nth-child({})'.format(i + 1)
+                continue
+            else:
+                break
+        if i == len(records)-1:
+            raise IndexError
 
+
+def select_operation_by_field(driver, table_locator, field_name, value, opera_text, opera_field_name):
+    """
+    通过表格字段值确定记录，再根据操作菜单的字段名称及菜单名称进行点击操作
     :param driver:
     :param table_locator: 表的css locator
     :param attr_name: 属性名称
     :param value: 属性的值
     :param opera_text: 操作文案
+    :param opera_field_name: 待操作菜单的字段名称，一般为“操作”
     :return:
     """
     record_locator = get_record_by_field_value(driver, table_locator, field_name, value)
@@ -342,7 +373,7 @@ def select_operation_by_field(driver, table_locator, field_name, value, opera_te
         text_list = [x.text for x in WebDriverWait(driver, 5).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))]
     for index, text in enumerate(text_list):
-        if "操作" in text:
+        if opera_field_name in text:
             a_css = record_locator + '>td:nth-child({})'.format(index+1)
             try:
                 WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(opera_text).click()
@@ -351,7 +382,7 @@ def select_operation_by_field(driver, table_locator, field_name, value, opera_te
                 WebDriverWait(driver, 5).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(
                     opera_text).click()
-        elif "操作" not in text and index == len(text_list)-1:
+        elif opera_field_name not in text and index == len(text_list)-1:
             raise IndexError  # FoundRecordError("操作", table_locator)
 
 
@@ -391,10 +422,11 @@ def select_operation_by_attr(driver, table_locator, attr_locator, attr_name, val
         if "操作" in text:
             a_css = record_locator + '>td:nth-child({})'.format(index+1)
             try:
-                WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(opera_text).click()
+                WebDriverWait(driver, 5, ignored_exceptions=[ElementClickInterceptedException]).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                  a_css))).find_element_by_link_text(opera_text).click()
             except:
                 sleep(1)
-                WebDriverWait(driver, 5).until(
+                WebDriverWait(driver, 5, ignored_exceptions=[ElementClickInterceptedException]).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, a_css))).find_element_by_link_text(
                     opera_text).click()
         elif "操作" not in text and index == len(text_list)-1:
@@ -415,18 +447,13 @@ def get_operation_field_text(driver, table_locator, record_locator):
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))
 
     a_text_css = record_locator + f'>td:nth-child({len(we_fields)})>a'
-    we_operation_texts = WebDriverWait(driver, 5, ignored_exceptions=(StaleElementReferenceException,)).until(
-        EC.visibility_of_all_elements_located((By.CSS_SELECTOR, a_text_css)))
+    operation_texts = [x.text for x in WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((
+        By.CSS_SELECTOR, a_text_css)))]
 
-    for i in we_operation_texts:
-        try:
-            temp = i.text
-        except StaleElementReferenceException:
-            sleep(1)
-            temp = i.text
-        if temp.find('\n') != -1:  # 特殊处理类似'分享\n6'的文本
-            temp = temp[:temp.find('\n')]
-        operation_text_list.append(temp)
+    for i in operation_texts:
+        if i.find('\n') != -1:  # 特殊处理类似'分享\n6'的文本
+            i = i[:i.find('\n')]
+        operation_text_list.append(i)
     return operation_text_list
 
 
@@ -550,7 +577,6 @@ def wait_for_laymsg(driver):
     result_text = WebDriverWait(driver, 15, 0.1).until(func)
     try:
         WebDriverWait(driver, 15).until_not(lambda x: x.find_element_by_css_selector('.layui-layer-content.layui-layer-padding'))
-#        WebDriverWait(driver, 5, 0.1).until(lambda x: x.find_element_by_css_selector('.layui-layer.layui-layer-loading.layui-anim'))    # 大多数情况下该句会超时
         WebDriverWait(driver, 10).until_not(lambda x: x.find_element_by_css_selector('.layui-layer.layui-layer-loading.layui-anim'))
     except:
         pass

@@ -8,7 +8,6 @@ import globalvar
 class FuncFlightsManage:
 
     def __init__(self):
-#        self.driver = globalvar.get_value('driver')
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER,  '班线管理', '班次管理', 'flights.do')
 
     def add_flight(self, center, line, flight_no, seat_num, depart_date, depart_time):

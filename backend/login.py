@@ -62,7 +62,7 @@ def login(url_section, user_section, main_flag=True):
             if text_tip == '':
                 break
             elif text_tip == '图形答案不正确':
-                sleep(0.5)
+                sleep(1)
             elif text_tip == '用户名或密码错误':
                 raise ValueError('用户名或密码错误！')
         # 灰度环境出现如下异常

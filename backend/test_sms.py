@@ -58,10 +58,10 @@ class TestSms(unittest.TestCase, metaclass=TestMeta):
                     if argv[1] == "TEST":
                         self.assertIn('微信关注“帮邦行”公号或下载帮邦行APP', self.sms_content)
                     else:
-                        self.assertIn('若需开票请线上支付（出租车向司机索要）', self.sms_content)
+                        self.assertIn('已指派司机', self.sms_content)
                     break
                 elif order_type == OrderType.EXPRESS:
-                    self.assertIn('若需开票请线上支付', self.sms_content)
+                    self.assertIn('已指派司机', self.sms_content)
                     break
                 elif order_type == OrderType.FASTLINE:
                     if argv[1] == "TEST":
@@ -76,7 +76,10 @@ class TestSms(unittest.TestCase, metaclass=TestMeta):
 
             elif order_node == Node.CANCELED and order.order_status in [OrderStatus.CANCEL]:
                 if order_type == OrderType.CARPOOLING:
-                    self.assertIn('客服已帮您取消订单', self.sms_content)
+                    if argv[1] == "TEST":
+                        self.assertIn('客服已帮您取消订单', self.sms_content)
+                    else:
+                        self.assertIn('客服已为您取消订单', self.sms_content)
                 elif order_type == OrderType.EXPRESS:
                     self.assertIn('寄件订单已取消', self.sms_content)
                 break
@@ -118,7 +121,7 @@ class TestSms(unittest.TestCase, metaclass=TestMeta):
                     if argv[1] == 'TEST':
                         expect_sms = f"已指派司机.+?，车牌{order.appoint_driver.car_num}，手机号\d+?为您服务"
                     else:
-                        expect_sms = f"已指派司机.+?，{order.appoint_driver.car_num}，\d+?为您服务"
+                        expect_sms = f"已指派司机.+?，车牌{order.appoint_driver.car_num}，手机号\d+?为您服务"
                     result = re.search(expect_sms, self.sms_content)
                     self.assertTrue(result)
                     break
@@ -161,7 +164,7 @@ class TestSms(unittest.TestCase, metaclass=TestMeta):
                 if argv[1] == 'TEST':
                     self.assertIn('已为您指派', result_sms)
                 else:
-                    self.assertIn('师傅您好！已指派', result_sms)
+                    self.assertIn('师傅，您好！系统已为您指派', result_sms)
         except IndexError:
             log.logger.error(f'没找到已指派的司机')
             raise IndexError

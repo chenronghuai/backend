@@ -2,6 +2,7 @@ import unittest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from time import sleep
 from ddt import ddt, data, file_data, unpack
 import utils
@@ -24,7 +25,6 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
     @classmethod
     def setUpClass(cls):
         cls.cc = FuncCustomerCall()
-        utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'customerCall.do', '客户')  # 打开“客户来电”与“订单管理”2个窗口，把活动窗口切回客户来电”页面
         cls.__name__ = cls.__name__ + "（客户来电下单：城际拼车、城际包车、小件快递、市内用车、多日包车、快线【新增班次】、代驾）"
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
@@ -36,14 +36,18 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["order_type"] = "拼车"
         assert_dict["date_time"] = utils.get_time(date, time)
         assert_dict["count"] = count
-        self.cc.getUserInfo(phone)
+        self.cc.get_user_info(phone)
 #        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
-        self.cc.selectOrderType('城际拼车')
+        self.cc.select_order_type('城际拼车')
         self.cc.input_customer_phone(by_phone)
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
         self.cc.selectDate(date, time)
         self.cc.selectPCount(count)
+
+        if globalvar.get_value('INTER_AUTH_FLAG') == '是':
+            self.cc.add_passenger_auth()
+
         ori, des = self.cc.get_ori_des()
         msg_text = self.cc.commit()
         if '提交订单成功!' in msg_text:
@@ -54,7 +58,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
                 l1_date = str(rs_date).split(' ')
                 l2_date = str(assert_dict['date_time']).split(' ')
                 self.assertEqual(l1_date[0], l2_date[0])
-                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]),
+                                       delta=9)
                 rs_type = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 2)
                 self.assertEqual(assert_dict['order_type'], rs_type)
                 rs_count = int(utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 6))
@@ -72,15 +77,17 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["phone"] = phone if by_phone == "" else by_phone
         assert_dict["order_type"] = "包车"
         assert_dict["date_time"] = utils.get_time(date, time)
-        self.cc.getUserInfo(phone)
+        self.cc.get_user_info(phone)
 #        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         sleep(1)
-        self.cc.selectOrderType('城际包车')
+        self.cc.select_order_type('城际包车')
         self.cc.input_customer_phone(by_phone)
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
         self.cc.selectCarType(car_type)
         self.cc.selectDate(date, time)
+        if globalvar.get_value('INTER_AUTH_FLAG') == '是':
+            self.cc.add_passenger_auth()
         ori, des = self.cc.get_ori_des()
         msg_text = self.cc.commit()
         if '提交订单成功!' in msg_text:
@@ -91,7 +98,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
                 l1_date = str(rs_date).split(' ')
                 l2_date = str(assert_dict['date_time']).split(' ')
                 self.assertEqual(l1_date[0], l2_date[0])
-                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]),
+                                       delta=9)
                 rs_type = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 2)
                 self.assertEqual(assert_dict['order_type'], rs_type)
                 rs_count = int(utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 6))
@@ -99,6 +107,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'包车订单下单失败，msg={msg_text}')
             assert False
+
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_express.json' if argv[3] == 'flow' else '.\\testcase\\order_express1.json')
@@ -109,10 +118,10 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["phone"] = phone
         assert_dict["order_type"] = "货件"
         assert_dict["date_time"] = utils.get_time(date, t_time)
-        self.cc.getUserInfo(phone)
+        self.cc.get_user_info(phone)
 #        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         sleep(1)
-        self.cc.selectOrderType('小件快递')
+        self.cc.select_order_type('小件快递')
         self.cc.input_receive_phone(receive_name, receive_phone)
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
@@ -127,7 +136,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
                 l1_date = str(rs_date).split(' ')
                 l2_date = str(assert_dict['date_time']).split(' ')
                 self.assertEqual(l1_date[0], l2_date[0])
-                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]), delta=4)
+                self.assertAlmostEqual(utils.convert_to_minute(l1_date[1]), utils.convert_to_minute(l2_date[1]),
+                                       delta=9)
                 rs_type = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 2)
                 self.assertEqual(assert_dict['order_type'], rs_type)
                 rs_count = int(utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 6))
@@ -135,7 +145,6 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'小件订单下单失败，msg={msg_text}')
             assert False
-
 
     test_case = ["14759250515", "5603293", "XM", "厦门市|XMSmm", "软件园二期", "软件园观日路24号", "商务七座/7座/豪华型", "", "T"],
     prod_case = ["14759250515", "5603293", "XM", "厦门市|XMSN", "软件园二期", "软件园观日路24号", "商务七座/7座/豪华型", "", "T"],
@@ -150,10 +159,10 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["phone"] = phone
         assert_dict["order_type"] = "市内叫车"
         assert_dict["by_phone"] = by_phone if by_phone != "" else phone
-        self.cc.getUserInfo(phone)
+        self.cc.get_user_info(phone)
 #        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         sleep(1)
-        self.cc.selectOrderType('市内用车')
+        self.cc.select_order_type('市内用车')
         self.cc.input_customer_phone(by_phone)
         self.cc.orderInnerCity(origin_region_index, origin_region, origin_addr, des_addr)
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#car-types-div')), '没有相应车型或价格')
@@ -194,10 +203,10 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["phone"] = phone
         assert_dict["order_type"] = "多日包车(" + str(time_long) + "天)"
         assert_dict["date_time"] = utils.get_time(date, time)
-        self.cc.getUserInfo(phone)
+        self.cc.get_user_info(phone)
 #        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         sleep(1)
-        self.cc.selectOrderType('多日包车')
+        self.cc.select_order_type('多日包车')
         globalvar.GLOBAL_DRIVER.execute_script('$("#receiveTel").val("' + by_phone + '")')
         self.cc.selectInterOrigin(origin_region_index, origin_region, origin_addr)
         self.cc.selectInterDestination(des_region_index, des_addr)
@@ -243,12 +252,13 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict = {}
         assert_dict["phone"] = phone
         assert_dict["order_type"] = "快巴"
-        self.cc.getUserInfo(phone)
+        self.cc.get_user_info(phone)
         sleep(1)
-        self.cc.selectOrderType('快线')
+        self.cc.select_order_type('快线')
         self.cc.input_customer_phone(by_phone)
         self.cc.orderExpress(origin_city, origin_addr, des_city, des_addr)
         self.cc.selectECount(customer_count)
+
         if flow == 'F':
             global count
             sleep(1)
@@ -310,14 +320,20 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         assert_dict["phone"] = phone
         assert_dict["order_type"] = "代驾"
         assert_dict["date_time"] = utils.get_time("", "")
-        self.cc.getUserInfo(phone)
+        self.cc.get_user_info(phone)
 #        self.driver.execute_script("$('#startName-suggest').html('')")  # added by 2021-7-1
         sleep(1)  # 代驾几率性碰到类型点击后再被置为城际拼车
-        self.cc.selectOrderType('代驾')
+        self.cc.select_order_type('代驾')
         globalvar.GLOBAL_DRIVER.execute_script('$("#receiveTel").val("' + receive_phone + '")')
-        self.cc.orderHelpDrive(city, origin_addr, des_addr)
-        ori, des = self.cc.get_ori_des()
-        msg_text = self.cc.commit()
+        try:
+            self.cc.orderHelpDrive(city, origin_addr, des_addr)
+            ori, des = self.cc.get_ori_des()
+            msg_text = self.cc.commit()
+        except TimeoutException:  # 2021-10-25 发生几率极低的获取不到价格超时
+            self.cc.orderHelpDrive(city, origin_addr, des_addr)
+            ori, des = self.cc.get_ori_des()
+            msg_text = self.cc.commit()
+
         if '提交订单成功!' in msg_text:
             if flow == 'T':
                 i = self.cc.checkitem(assert_dict["order_type"], ori, des, phone)
