@@ -403,7 +403,9 @@ class FuncCustomerCall:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
                 EC.text_to_be_present_in_element((By.XPATH, '//*[@id="priceTips"]'), '预估花费'), '获取价格失败')
         try:
-            globalvar.GLOBAL_DRIVER.execute_script("$('#submitAll').click()")
+#            globalvar.GLOBAL_DRIVER.execute_script("$('#submitAll').click()")
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                                                                         '#submitAll'))).click()
             msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
         except TimeoutError:  # 机率性极低的超时异常，添加异常处理试试20121-11-1
             globalvar.GLOBAL_DRIVER.execute_script("$('#submitAll').click()")

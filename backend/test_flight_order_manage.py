@@ -66,6 +66,7 @@ class TestFlightOrderManage(unittest.TestCase, metaclass=TestMeta):
             WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))) # 直接点击偶发无效，加下面js试试
             globalvar.GLOBAL_DRIVER.execute_script("""$('div[type="dialog"]>div>a.layui-layer-btn0').click()""")
+
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src="/flightsOrderManager.do"]')))
             msg_complete_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)

@@ -327,7 +327,7 @@ def get_record_by_field_value(driver, locator, td_val, value):
 
 
 def get_record_by_multi_field_value(driver, locator, sour_dict):
-    WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, locator)))
+    WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, locator + '>tbody>tr')))
     tds = driver.find_elements_by_css_selector(locator + '>thead>tr>th')
     records = driver.find_elements_by_css_selector(locator + '>tbody>tr')
     value_dict = {}
@@ -444,12 +444,20 @@ def get_operation_field_text(driver, table_locator, record_locator):
     """
     operation_text_list = []
     we_fields = WebDriverWait(driver, 5, ignored_exceptions=(StaleElementReferenceException,)).until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, table_locator + '>thead>tr>th')))
 
     a_text_css = record_locator + f'>td:nth-child({len(we_fields)})>a'
-    operation_texts = [x.text for x in WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((
-        By.CSS_SELECTOR, a_text_css)))]
 
+    operation_texts = [x.text for x in WebDriverWait(driver, 10).until(EC.visibility_of_all_elements_located((
+        By.CSS_SELECTOR, a_text_css)))]
+    '''
+    try:
+        operation_texts = [x.text for x in WebDriverWait(driver, 10).until(EC.visibility_of_all_elements_located((
+            By.CSS_SELECTOR, a_text_css)))]
+    except TimeoutException:
+        log.logger.error('记录显示超时或者没有满足条件的记录！')
+        raise IndexError
+    '''  # 该try块会导致超时，不解
     for i in operation_texts:
         if i.find('\n') != -1:  # 特殊处理类似'分享\n6'的文本
             i = i[:i.find('\n')]
@@ -619,9 +627,10 @@ def make_sure_driver(driver, mother_menu, child_menu, src_link):
         switch_frame(driver, mother_menu, child_menu, src_link)
         globalvar.opened_window_pool.append(src_link)
 
+
 class TestMeta(type):
     """
-    创建TestCase的元类，根据测试方法在测试类的位置先后加载
+    创建TestCase的元类，改变测试方法的名称，使得测试方法的执行顺序按照其在测试类的出现的先后位置
     """
     def __new__(cls, name, bases, attrs):
         i = 10

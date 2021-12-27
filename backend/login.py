@@ -20,6 +20,7 @@ def login(url_section, user_section, main_flag=True):
     :param main_flag: 是否主线程标志
     :return: driver
     """
+    driver = None
     try:
         driver = webdriver.Chrome()
         globalvar.set_value('driver', driver)

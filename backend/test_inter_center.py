@@ -233,7 +233,11 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '城际调度中心', 'orderCenterNew.do')  # 不加会机率性导致下句超时，不解？
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderList'))).click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="已派"]'))).click()
-        we_appointed_orders = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'tbody.dispatched-order>tr')))  #
+        try:
+            we_appointed_orders = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'tbody.dispatched-order>tr')))  #
+        except TimeoutException:
+            log.logger.error('已指派订单列表显示超时或没有实际的已指派订单！')
+            raise IndexError
         global_order_id_list = [x.order_id for x in globalvar.order_pool]
         for i in range(len(we_appointed_orders)):
             try:

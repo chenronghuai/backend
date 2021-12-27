@@ -194,6 +194,9 @@ class FuncInterCenter:
 
     def filter_driver(self, order):
         net_drivers = list(filter(lambda _driver: _driver.driver_type == DriverType.NET_DRIVER and _driver.oc_center in self.current_oc_center, globalvar.driver_pool))
+        if len(net_drivers) == 0:
+            log.logger.error('司机池里没有网约车司机！')
+            raise IndexError
         if order.order_type in [OrderType.CARPOOLING, OrderType.FASTLINE]:
             for index, driver in enumerate(net_drivers):
                 if order.order_count <= driver.max_user-driver.appoint_user_count and driver.charter_count == 0:

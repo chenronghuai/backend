@@ -119,6 +119,9 @@ class FuncUserManage:
                 else:
                     log.logger.debug(f'{v}--不支持的修改参数')
                     raise IndexError
+        except:
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnEsc').click()
+        else:
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
             return utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
         finally:

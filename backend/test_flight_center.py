@@ -128,6 +128,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
                 assert False
             else:
                 order_.order_status = OrderStatus.APPOINTED
+                order_.appoint_driver = driver_
         else:
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector(driver_css + '>td:nth-child(11)>a[name="btnRepairOrderInterc"]').click()
             try:
@@ -139,6 +140,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
                 assert False
             else:
                 order_.order_status = OrderStatus.APPOINTED
+                order_.appoint_driver = driver_
         '''
         if argv[1] != 'TEST':
             sleep(4)

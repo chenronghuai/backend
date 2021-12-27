@@ -86,7 +86,7 @@ if __name__ == '__main__':
         suite_all = unittest.TestSuite()
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestDriverReport))
-        
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterCenter))
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestUserManage))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPrice))
-
+        
         if argv[3] == 'auto':
             runner.run(suite_one)
         elif argv[3] == 'flow':

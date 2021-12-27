@@ -511,10 +511,16 @@ class FuncLine:
             globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
 
         finally:
+            sleep(1.5)
+            try:
+                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSecCancel').click()
+            except:
+                pass
             globalvar.GLOBAL_DRIVER.switch_to.default_content()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do"]')))
-            sleep(1.5)
+
+
 
     def get_safe_phone(self):
         try:
@@ -557,7 +563,8 @@ class FuncLine:
             globalvar.GLOBAL_DRIVER.execute_script("$('#line_table>tbody').html('')")
             if v in ['关闭', '启用', '下线', '上线', '设为人民币', '设为港币']:
                 globalvar.GLOBAL_DRIVER.switch_to.default_content()
-                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                  'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
                 line_iframe = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('iframe[src="/line.do"]')
                 globalvar.GLOBAL_DRIVER.switch_to.frame(line_iframe)
             if argv[1] != 'TEST':

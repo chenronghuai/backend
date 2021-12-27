@@ -26,10 +26,6 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
           else {"center":"漳州运营中心", "line":"厦门测试班线", "seat_num":"20"})
     @unpack
     def test_add_flihgts(self, center, line, seat_num):
-        globalvar.GLOBAL_DRIVER.execute_script("$('#addLineFlights').click()")
-        sleep(1)
-        globalvar.GLOBAL_DRIVER.switch_to.frame(
-            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('iframe[src^="/flights.do?method=editLineFlights"]'))
 
         secs = time.time() + 1800    # 半小时后
         hour = time.localtime(secs).tm_hour  #time.gmtime(secs).tm_hour + 8
@@ -52,13 +48,7 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
 
         msg_text = self.fm.add_flight(center, line, flight_no, seat_num, depart_date, depart_time)
         if '操作成功' in msg_text:
-            globalvar.GLOBAL_DRIVER.switch_to.default_content()
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'iframe[src="/flights.do')))
-            we_manage = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('iframe[src="/flights.do"]')
-            globalvar.GLOBAL_DRIVER.switch_to.frame(we_manage)
-            sleep(2)
             globalvar.GLOBAL_DRIVER.execute_script("$('#selCenter').click()")
-    #        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCenter').click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector('.fs-label-wrap>.fs-label').click()
@@ -72,7 +62,7 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
                 'table#flights_table>tbody>tr')
             depart_time_list = []
             flight_no_list = []
-            for i in range(1, len(flights) + 1):
+            for i in range(1, len(flights)+1):
                 depart_time_list.append(utils.get_cell_content(globalvar.GLOBAL_DRIVER, 'table#flights_table', i, 5))
                 flight_no_list.append(utils.get_cell_content(globalvar.GLOBAL_DRIVER, 'table#flights_table', i, 3))
             status = True if depart_time in depart_time_list and flight_no in flight_no_list else False

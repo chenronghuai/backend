@@ -3,7 +3,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from time import sleep, strftime
 import log
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 import utils
 import globalvar
 import re
@@ -71,12 +71,17 @@ class FuncDriverReport:
     def driver_report_by_carnum(self, carnum, phone, ori_val, des_val):
         self.is_phone = False
         self.b_driver = False
-        e_carnum = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCar')
+        e_carnum = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCar_text')
         e_carnum.clear()
         globalvar.GLOBAL_DRIVER.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
-        globalvar.GLOBAL_DRIVER.execute_script('$("#selCar").val("' + carnum + '")')
+        globalvar.GLOBAL_DRIVER.execute_script('$("#phone").val("")')
+#        globalvar.GLOBAL_DRIVER.execute_script('$("#selCar_text").val("' + carnum + '")')
+        e_carnum.click()
+        e_carnum.send_keys(carnum)
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, 'ul.sp_results>li[pkey="' + carnum + '"]'))).click()
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#query_carno').click()  # 车牌查询
         try:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
@@ -88,10 +93,24 @@ class FuncDriverReport:
         records = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('table#data_table>tbody>tr')
         for i in range(1, len(records)+1):
             css = '#data_table>tbody>tr:nth-child(%s)>td:nth-child(5)' % i
-            if globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css).text == phone:
+            try:
+                phone_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, css
+                                                                                                 ))).text
+            except StaleElementReferenceException:
+                sleep(1)
+                phone_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, css
+                                                      ))).text
+            if phone_text == phone:
                 self.b_driver = True
                 css_report = '#data_table>tbody>tr:nth-child(%s)>td:nth-child(15)>a[name="btnReport"]' % i
-                globalvar.GLOBAL_DRIVER.find_element_by_css_selector(css_report).click()
+                #  不加try块，在灰度环境会出现StaleElementReferenceException，不解！！！
+                try:
+                    WebDriverWait(globalvar.GLOBAL_DRIVER, 5, ignored_exceptions=[StaleElementReferenceException]).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, css_report))).click()
+                except:
+                    WebDriverWait(globalvar.GLOBAL_DRIVER, 5, ignored_exceptions=[StaleElementReferenceException]).until(
+                        EC.visibility_of_element_located((By.CSS_SELECTOR, css_report))).click()
+
                 break
         if not self.b_driver:
             log.logger.error(f'找不到{carnum}-{phone}关联的司机！')
@@ -119,7 +138,9 @@ class FuncDriverReport:
 
     def driver_cancel_report(self, phone):
         we_phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#phone')
+        we_carnum = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCar_text')
         we_phone.clear()
+        we_carnum.clear()
         globalvar.GLOBAL_DRIVER.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
         we_phone.send_keys(phone)
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
