@@ -26,8 +26,8 @@ class FuncInterPrice:
         # 此句确保后续查询为最新结果，否则用例之间可能交叉导致出现StaleElementReferenceException异常
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
                                                                                           '#btnQuery'))).click()
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: x.find_element_by_css_selector(
-            '#line_table>tbody>tr:nth-child(1)>td:nth-child(1)').text == line_name)
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5, ignored_exceptions=[StaleElementReferenceException]).until(lambda x:
+            x.find_element_by_css_selector('#line_table>tbody>tr:nth-child(1)>td:nth-child(1)').text == line_name)
 
     def set_price(self, line_name, order_type, car_type, price):
         self.query_line(line_name)

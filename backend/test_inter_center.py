@@ -17,8 +17,8 @@ from PaVManage.func_line import FuncLine
 
 
 expect_text_dict = {
-            '专车排班': ['补单', '核单', '置顶', '取消', '发车', '锁定', '空车'],
-            '已发车': ['补单', '详情', '补空单'],
+            '专车排班': ['补单', '核单', '置顶', '取消', '呼出', '发车', '锁定', '空车'],
+            '已发车': ['呼出', '补单', '详情', '补空单'],
             '即时1': ['呼出', '消单', '指派', '分享', '收回'],
             '即时2': ['呼出', '消单', '指派', '分享'],
             '已派': ['呼出', '改派', '消单', '改单', '重派司机']
@@ -321,7 +321,8 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
             else:
                 self.assertEqual(sorted(result_operate_text), sorted(expect_text_dict[category]))
         else:
-            self.assertEqual(sorted(result_operate_text), sorted(['补单', '详情']))   # 已发车需要细化各种派单情形：人满、货满，待后续优化
+            self.assertEqual(sorted(result_operate_text), sorted(['呼出', '补单', '详情']))   #
+            # 已发车需要细化各种派单情形：人满、货满，待后续优化
 
         sleep(2)  # 发现当前用例会取到前一个用例的菜单文本，加等待试试
 

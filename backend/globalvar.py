@@ -1,6 +1,9 @@
 from sys import argv
 from PaVManage.func_line import FuncLine
 import utils
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 import log
 
 
@@ -12,6 +15,10 @@ appointed_driver_pool = []
 GLOBAL_DRIVER = None
 
 CLASSIC_PHONE_NUMBER = '66666663'
+
+TEST_INNERLINE_ID = "3610010_to_3610010"
+PROD_INNERLINE_ID = "3610010_to_3610010"
+INNERLINE_ID = TEST_INNERLINE_ID if argv[1] == 'TEST' else PROD_INNERLINE_ID
 
 TEST_INTERLINE_ID = "361000_to_361000"
 PROD_INTERLINE_ID = "361000_to_361000"
@@ -35,6 +42,12 @@ def init():
 def init_line():
     lm = FuncLine()
     lm.queryLine(line_num=INTERLINE_ID)
+    # 确保线路处于可用状态
+    line_status_text = WebDriverWait(GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                               '#line_table>tbody>tr>td:nth-child(12)'))).text
+    if '不可用' == line_status_text:
+        lm.toggleLineStatus(INTERLINE_ID, '启用')
+
     utils.select_operation_by_attr(GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id',
                                    INTERLINE_ID, '安全号码')
     safe_info_dict = lm.get_safe_phone()
@@ -66,6 +79,14 @@ def init_line():
         lm.modify_fast_line(identity_auth='否')
         set_value('FAST_AUTH_FLAG', True)
 
+    # 确保测试环境市内线路处于可用状态
+    if argv[1] == 'TEST':
+        lm.queryLine(line_num=INNERLINE_ID)
+        # 确保线路处于可用状态
+        line_status_text = WebDriverWait(GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                   '#line_table>tbody>tr>td:nth-child(12)'))).text
+        if '不可用' == line_status_text:
+            lm.toggleLineStatus(INNERLINE_ID, '启用')
 
 def teardown_line():  # 恢复线路到原来的状态
     lm = FuncLine()

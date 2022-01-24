@@ -238,9 +238,12 @@ class FuncFlightCenter:
                     globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#orderAddBtn').click()
 
                     try:
+                        '''
                         msg_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
                             EC.presence_of_element_located(
                                 (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                        '''
+                        msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
                         setattr(self, 'add_result_text', msg_text)
                     except:
                         setattr(self, 'add_result_text', '超时异常，补单状态未知')
@@ -253,9 +256,12 @@ class FuncFlightCenter:
                             EC.visibility_of_element_located(
                                 (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn->a.layui-layer-btn0'))).click()
                         try:
+                            '''
                             msg_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                                 EC.presence_of_element_located(
                                     (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                            '''
+                            msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
                             setattr(self, 'add_result_text', msg_text)
                         except:
                             pass
@@ -409,8 +415,18 @@ class FuncFlightCenter:
         route_status_text = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#line_table', 1, 11)
         if auto_flag and route_status_text == '关闭' or not auto_flag and route_status_text == '开启':
             utils.select_operation_by_attr(globalvar.GLOBAL_DRIVER, '#line_table', '#line_table>tbody>tr', 'data-line-id', line_id, '开路由/关路由')
-            globalvar.GLOBAL_DRIVER.switch_to.default_content()
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located(
-                (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
+            try:
+                globalvar.GLOBAL_DRIVER.switch_to.default_content()
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
+            except:
+                log.logger.warning('开/关路由时碰到异常！')
+            # 碰到异常时关闭设置框（连同遮挡层，此处全窗口遮挡，否则后续用例都无法执行）
+            finally:
+                try:
+                    WebDriverWait(globalvar.GLOBAL_DRIVER, 2).until(EC.visibility_of_element_located(
+                        (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn1'))).click()
+                except:
+                    pass
 
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '班线管理', '班次调度中心', 'flightsOrderCenter.do')

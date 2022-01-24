@@ -511,9 +511,9 @@ class FuncLine:
             globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
 
         finally:
-            sleep(1.5)
             try:
-                globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSecCancel').click()
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 2).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                            '#btnSecCancel'))).click()
             except:
                 pass
             globalvar.GLOBAL_DRIVER.switch_to.default_content()

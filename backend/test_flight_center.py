@@ -134,7 +134,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             try:
                 self.fc.add_inter_order(order_.order_id)
                 if '补单操作成功!' not in getattr(self.fc, 'add_result_text', '未获取到补单结果信息'):
-                    log.logger.error(f'补城际订单失败，msg={getattr(self.fc, "add_result_text")}')
+                    log.logger.error(f'补城际订单失败，msg={getattr(self.fc, "add_result_text", "未获取到补单结果信息")}')
                     assert False
             except:
                 assert False

@@ -25,7 +25,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
     @classmethod
     def setUpClass(cls):
         cls.cc = FuncCustomerCall()
-        cls.__name__ = cls.__name__ + "（客户来电下单：城际拼车、城际包车、小件快递、市内用车、多日包车、快线【新增班次】、代驾）"
+        cls.__name__ = cls.__name__ + "（客户来电下单：城际拼车、城际包车、小件快递、市内用车、多日包车、快线【新增班次】、代驾、开启身份认证下单）"
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_carpooling.json' if argv[3] == 'flow' else '.\\testcase\\order_carpooling1.json')
@@ -67,6 +67,7 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'拼车订单下单失败，msg={msg_text}')
             assert False
+    
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_character.json' if argv[3] == 'flow' else '.\\testcase\\order_character1.json')
@@ -107,7 +108,6 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'包车订单下单失败，msg={msg_text}')
             assert False
-
 
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_express.json' if argv[3] == 'flow' else '.\\testcase\\order_express1.json')
@@ -350,7 +350,6 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'代驾订单下单失败，msg={msg_text}')
             assert False
-
 
 
 
