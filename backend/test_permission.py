@@ -33,7 +33,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         utils.switch_exist_frame(globalvar.GLOBAL_DRIVER, 'customerCall.do', '客户')
         we_phone = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#phone')
         we_phone.clear()
-        we_phone.send_keys('66666663')
+        we_phone.send_keys(globalvar.CLASSIC_PHONE_NUMBER)
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '#query_all'))).click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
@@ -57,9 +57,9 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
 
             cu = FuncCustomerCall()
             sleep(1)
-            cu.get_user_info("66666663")
+            cu.get_user_info(globalvar.CLASSIC_PHONE_NUMBER)
             cu.select_order_type('城际拼车')
-            cu.input_customer_phone("66666663")
+            cu.input_customer_phone(globalvar.CLASSIC_PHONE_NUMBER)
             cu.selectInterOrigin("XM", "厦门市|XMCJ", "软件园二期")
             cu.selectInterDestination("XM", "观日路24号")
             cu.selectDate('', '')
@@ -78,7 +78,7 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
                     EC.visibility_of_element_located((By.CSS_SELECTOR, '.add-passenger-summary')))
             cu.commit()
             ori, des = cu.get_ori_des()
-            i = cu.checkitem("拼车", ori, des, "66666663")
+            i = cu.checkitem("拼车", ori, des, globalvar.CLASSIC_PHONE_NUMBER)
             cu.save_order(i, OrderType.CARPOOLING)
 
             ic = FuncInterCenter()
@@ -130,12 +130,14 @@ class TestPermission(unittest.TestCase, metaclass=TestMeta):
         try:
 
             utils.switch_frame(new_driver, '监控管理', '订单管理', 'orderManage.do')
-            WebDriverWait(new_driver, 10).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, '#btnQuery'))).click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'table>tbody>tr')))
+            globalvar.GLOBAL_DRIVER.execute_script("$('table>tbody').html('')")
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnClean').click()
+            globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
             records = WebDriverWait(new_driver, 5).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'table>tbody>tr')))
             id_list = [x.get_attribute('order-list-id') for x in records]
             line_list = str(utils.read_config_value(user, 'line_own')).split(',')
-            if flag:
+            if flag:  # 分享后，只要账号有该订单线路权限，就可以看到该笔订单，不受该笔订单下单时的分享状态影响，所以简单地以最后一笔作为验证目标
                 if '厦门市到厦门市' in line_list:
                     self.assertTrue(globalvar.order_pool[-1].order_id in id_list)
                 else:

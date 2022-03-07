@@ -186,16 +186,20 @@ def cal_val(s_img):
         index_equ = s_img.find('=')
         sub_str = s_img[0:index_equ]
         oper = ('+', '-', '*')
+        index_oper = -1
         for i in oper:
             index_oper = sub_str.find(i)
             if index_oper != -1:
                 break
-        oper_liter = sub_str[index_oper]
-        first_num = extract_digit(sub_str[0:index_oper])
-        second_num = extract_digit(sub_str[index_oper + 1:len(sub_str)])
+        if index_oper != -1:
+            oper_liter = sub_str[index_oper]
+            first_num = extract_digit(sub_str[0:index_oper])
+            second_num = extract_digit(sub_str[index_oper + 1:len(sub_str)])
+            sub_str = first_num + oper_liter + second_num
+            value = eval(sub_str)
+        else:
+            value = 0
 
-        sub_str = first_num + oper_liter + second_num
-        value = eval(sub_str)
     except:
         value = 0
     return value

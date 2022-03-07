@@ -165,9 +165,9 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         expect_iter = []
         self.fc.toggle_auto_appoint(line_id)  # 开启线路自动指派
         if argv[1] == 'TEST':
-            sleep(15)
+            sleep(20)
         else:
-            sleep(30)
+            sleep(40)
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#orderList').click()
         WebDriverWait(globalvar.GLOBAL_DRIVER, 10, ignored_exceptions=(StaleElementReferenceException,)).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr')))

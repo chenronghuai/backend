@@ -50,7 +50,7 @@ class TestSms(unittest.TestCase, metaclass=TestMeta):
                     if argv[1] == "TEST":
                         return True
                     else:
-                        self.assertIn('请上车后扫车上二维码及时完成付款，祝您出行愉快', self.sms_content)
+                        return True  # 班线下单短信现阶段都没启用
                     break
 
             elif order_node == Node.APPOINTED and order.order_status in [OrderStatus.APPOINTED]:

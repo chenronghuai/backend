@@ -83,6 +83,8 @@ class TestFlightsManage(unittest.TestCase, metaclass=TestMeta):
             raise IndexError
 
 #        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCenter').click()
+        if argv[1] != 'TEST':
+            sleep(2)
         globalvar.GLOBAL_DRIVER.execute_script("$('#selCenter').click()")
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'div#selCenter-suggest>div[dataname$="' + center + '"]'))).click()

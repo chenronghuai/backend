@@ -63,8 +63,9 @@ class FuncUserManage:
         globalvar.GLOBAL_DRIVER.execute_script("$('table#bbxuser_table>tbody>tr').html('')")
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnQuery').click()
         try:
-            we_tds = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-                EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'table#bbxuser_table>tbody>tr>td')))
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector(
+                '#bbxuser_table>tbody>tr>td')) > 1)  # 确认找到用户记录
+            we_tds = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('table#bbxuser_table>tbody>tr>td')
             fields_value = []
             for i in we_tds:
                 fields_value.append(i.text)

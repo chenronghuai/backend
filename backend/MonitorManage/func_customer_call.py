@@ -92,7 +92,7 @@ class FuncCustomerCall:
                                                                                             '#startName'))).click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#startName-suggest>div')))
         globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#startName').send_keys(origin_region_index)
-        globalvar.GLOBAL_DRIVER.execute_script("$('#endsName-suggest').html('')")  # 20121-7-1 从下一句的后面移到前面
+        globalvar.GLOBAL_DRIVER.execute_script("$('#endsName-suggest').html('')")  # 2021-7-1 从下一句的后面移到前面
         if len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#startName-suggest>div')) > 1:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.XPATH,
                 '//*[@id="startName-suggest"]/div[@text="' + origin_region + '"]')), '起始方位无法获取').click()
@@ -403,22 +403,21 @@ class FuncCustomerCall:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
                 EC.text_to_be_present_in_element((By.XPATH, '//*[@id="priceTips"]'), '预估花费'), '获取价格失败')
         try:
-#            globalvar.GLOBAL_DRIVER.execute_script("$('#submitAll').click()")
             WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR,
                                                                                          '#submitAll'))).click()
             msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
-        except TimeoutError:  # 机率性极低的超时异常，添加异常处理试试20121-11-1
+        except TimeoutError:  # 机率性极低的超时异常，添加异常处理试试2021-11-1
             globalvar.GLOBAL_DRIVER.execute_script("$('#submitAll').click()")
             msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
         return msg_text
 
-    def checkitem(self, order_type, ori, des, customer_phone, by_phone=None):
+    def checkitem(self, order_type, ori, des, customer_phone):
         """
-        确认目标订单的位置（当账号有较多的预约订单时【超过5单】有可能获取不到）
         :param order_type: 订单类型
+        :param ori: 订单起点
+        :param des: 订单终点
         :param customer_phone: 下单电话
-        :param by_phone: 乘客电话
-        :return: 客户来电页订单所在行数，匹配不到返回0
+        :return: 订单管理页订单所在行数，匹配不到返回0
         """
         i = 0
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '订单管理', 'orderManage.do')
@@ -431,7 +430,7 @@ class FuncCustomerCall:
         globalvar.GLOBAL_DRIVER.execute_script("$('#phone').val(" + customer_phone + ")")
         globalvar.GLOBAL_DRIVER.execute_script("$('#btnQuery').click()")
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#data_table>tbody>tr')))
-        for i in range(1, len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#data_table>tbody>tr')) + 1):
+        for i in range(1, len(globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('#data_table>tbody>tr'))+1):
             actual_type = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 2)
             actual_ori = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 9)
             actual_des = utils.get_cell_content(globalvar.GLOBAL_DRIVER, '#data_table', i, 10)

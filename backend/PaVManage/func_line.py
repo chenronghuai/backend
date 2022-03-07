@@ -476,14 +476,18 @@ class FuncLine:
             city_sel = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#bakCity')
 
             if flag:
-                Select(switch_sel).select_by_visible_text('是')
-                try:
+                if Select(switch_sel).first_selected_option.text == '否':  # 从“否”切换到“是”
+                    Select(switch_sel).select_by_visible_text('是')
                     globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
-                    WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div>a.layui-layer-btn0'))).click()
-                except:
-                    pass
-                WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
-                    EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
+                    sleep(1)
+                    WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                                                                                'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
+                    WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until_not(EC.presence_of_element_located((By.CSS_SELECTOR,
+                                                                                                'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0')))
+                    WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
+                        EC.frame_to_be_available_and_switch_to_it(
+                            (By.CSS_SELECTOR, '[src^="/line.do?method=securityNumberPage"]')))
+
                 Select(supplier_sel).select_by_visible_text(supplier)
                 WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: len(x.find_elements_by_css_selector('#bakProvince>option'))>1)
                 Select(province_sel).select_by_visible_text(province)
@@ -507,20 +511,18 @@ class FuncLine:
                 log.logger.error(f'保存安全号码设置失败，msg={msg_text}')
                 raise IndexError
             return msg_text
-        except:
-            globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
+#        except:
+#            globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
 
         finally:
-            try:
-                WebDriverWait(globalvar.GLOBAL_DRIVER, 2).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
-                                                                                            '#btnSecCancel'))).click()
-            except:
-                pass
             globalvar.GLOBAL_DRIVER.switch_to.default_content()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
                 EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, '[src^="/line.do"]')))
-
-
+            try:
+                WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                                                                            'div.layui-layer-btn.layui-layer-btn-c>a.layui-layer-btn0'))).click()
+            except:
+                pass
 
     def get_safe_phone(self):
         try:

@@ -17,9 +17,6 @@ restore_flag = False
 
 class FuncOcManage:
 
-#    def __init__(self):
-#        self.driver = globalvar.get_value('driver')
-
     def share_setup(self, share_src, share_to, flag=True):
         """
         设置运营中心共享

@@ -61,8 +61,10 @@ if __name__ == '__main__':
         else:
             os.mkdir(os.path.join(utils.get_path(), os.path.pardir) + '//log//', 0o777)
 
+#        file_path = os.path.abspath(
+#            os.path.join(utils.get_path(), os.path.pardir)) + "//testreport//" + now_time + "_result.html"
         file_path = os.path.abspath(
-            os.path.join(utils.get_path(), os.path.pardir)) + "//testreport//" + now_time + "_result.html"
+            os.path.join(os.path.join(utils.get_path(), os.path.pardir), "testreport", now_time + "_result.html"))
         file_result = open(file_path, 'wb')
 
         envir_str = '未知环境'
@@ -84,7 +86,7 @@ if __name__ == '__main__':
         suite_flow = unittest.TestSuite()
         suite_one = unittest.TestSuite()
         suite_all = unittest.TestSuite()
-
+      
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestDriverReport))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerCall))
@@ -98,7 +100,7 @@ if __name__ == '__main__':
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightOrderManage))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestSms))
-
+        
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterPrice))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightsManage))
@@ -106,13 +108,13 @@ if __name__ == '__main__':
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestLine))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPermission))
-        
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestCustomerQuery))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestUserManage))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestPrice))
-        
+
         if argv[3] == 'auto':
             runner.run(suite_one)
         elif argv[3] == 'flow':

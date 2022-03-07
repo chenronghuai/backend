@@ -1,4 +1,4 @@
 {
-	"case10":{"phone":"14759250515","by_phone": "14759250515", "origin_region_index":"XM", "origin_region":"厦门市|XMCJ", "origin_addr": "软件园二期","des_region_index": "XM","des_addr": "观日路24号", "car_type": "出租车/5座", "date": "", "time": "", "flow": "T"},
-	"case11":{"phone":"14759250515","by_phone": "14759250515", "origin_region_index":"XM", "origin_region":"厦门市|XMCJ", "origin_addr": "软件园二期","des_region_index": "XM","des_addr": "观日路24号", "car_type": "网约车/5座/豪华型", "date": "", "time": "", "flow": "T"}
+	"case10":{"phone":"14759250515","by_phone": "14759250515", "origin_region_index":"XM", "origin_region":"厦门市|XMCJ", "origin_addr": "软件园二期","des_region_index": "XM","des_addr": "观日路24号", "car_type": "出租车/5座", "date": "", "time": ""},
+	"case11":{"phone":"14759250515","by_phone": "14759250515", "origin_region_index":"XM", "origin_region":"厦门市|XMCJ", "origin_addr": "软件园二期","des_region_index": "XM","des_addr": "观日路24号", "car_type": "网约车/5座/豪华型", "date": "", "time": ""}
 }

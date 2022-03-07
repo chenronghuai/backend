@@ -5,12 +5,19 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 from selenium.common.exceptions import WebDriverException
 from time import sleep
 from sys import argv
+import sys
 from pytesseract import image_to_string
-from PIL import ImageEnhance, ImageGrab
+from PIL import ImageEnhance
+if sys.platform.startswith('lin'):
+    import pyscreenshot as ImageGrab
+else:
+    from PIL import ImageGrab
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import globalvar
+from selenium.webdriver.chrome.options import Options
+
 
 
 def login(url_section, user_section, main_flag=True):
@@ -21,8 +28,15 @@ def login(url_section, user_section, main_flag=True):
     :return: driver
     """
     driver = None
+    options = Options()
+    options.add_argument('--headless')  # 无头模式
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
     try:
-        driver = webdriver.Chrome()
+        if sys.platform.startswith('lin'):
+            driver = webdriver.Chrome(options=options)
+        else:
+            driver = webdriver.Chrome()
         globalvar.set_value('driver', driver)
         globalvar.GLOBAL_DRIVER = driver
         driver.get(utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl'))
