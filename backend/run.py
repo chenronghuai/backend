@@ -100,7 +100,7 @@ if __name__ == '__main__':
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightOrderManage))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestSms))
-        
+
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestInterPrice))
 
         suite_flow.addTest(utils.SequentialTestLoader().loadTestsFromTestCase(TestFlightsManage))

@@ -66,7 +66,8 @@ class TestCustomerCall(unittest.TestCase, metaclass=TestMeta):
         else:
             log.logger.debug(f'拼车订单下单失败，msg={msg_text}')
             assert False
-    
+
+
     @unittest.skipIf(argv[3] != 'flow', '非流程不跑')
     @file_data('.\\testcase\\order_character.json')
     def test_order_charter(self, phone, by_phone, origin_region_index, origin_region, origin_addr, des_region_index,

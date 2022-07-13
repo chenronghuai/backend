@@ -509,6 +509,20 @@ def convert_to_minute(t):
     return int(t_t[0])*60 + int(t_t[1])
 
 
+def convert_to_stamp(time_str):
+    """
+    把'03-16 15:29'格式的时间转化为时间戳
+    :param time_str:待转化的时间，字符串，格式要求为'03-16 15:29'
+    :return:时间戳，秒数
+    """
+    result = time_str.split(' ')
+    date_list = result[0].split('-')
+    time_list = result[1].split(':')
+    year = time.localtime()[0]
+
+    return time.mktime((year, int(date_list[0]), int(date_list[1]), int(time_list[0]), int(time_list[1]), 30, 0, 0, 0))
+
+
 def normal_to_datetime(src):
     """
     把'2020-07-06 08:53:55'格式的时间转化为datetime对象，用于时间先后对比
@@ -571,6 +585,19 @@ def generate_password():
         t = random.choice(cha_u)
         s += t
     return s
+
+
+def get_subscribe_order():
+    """
+    获取网约预约单
+    :return:预约单的id列表
+    """
+    id_list = []
+    net_orders = filter(lambda order_: order_.order_type != OrderType.FASTLINE, globalvar.order_pool)
+    for order in net_orders:
+        if convert_to_stamp(order.appoint_time)-time.time() > 2400:  # 过滤出用车时间离现在超过40分钟的订单
+            id_list.append(order.order_id)
+    return id_list
 
 
 def wait_for_laymsg(driver):
@@ -650,11 +677,11 @@ class TestMeta(type):
 
 
 class SequentialTestLoader(unittest.TestLoader):
-    '''
+    """
     按照用例的书写顺序执行，配合TestMeta类使用
     定义时：class Testxxx(unittest,  metaclass=TestMeta)
     加载时：SequentialTestLoader().loadTestsFromTestCase(Testxxx)
-    '''
+    """
     def getTestCaseNames(self, testCaseClass):
         test_names = super().getTestCaseNames(testCaseClass)
         testcase_methods = list(testCaseClass.__dict__.keys())

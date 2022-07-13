@@ -138,8 +138,8 @@ class FuncCustomerCall:
         :param des_addr: 终点地址
         :return:
         """
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div#endsName-suggest>div')))  # 2022-6-28 正式环境有出现超时现象，调整为10观察
         try:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR,
                                                                                             '#endsName'))).click()
@@ -161,7 +161,9 @@ class FuncCustomerCall:
             we_des_addr.click()
             # 下句偶尔超时异常，未知原因
             WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
-                EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#end-lists-penal>li:nth-child(1)')))
+            # WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
+            #     EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         except TimeoutException:
             globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').send_keys(Keys.BACKSPACE)
             globalvar.GLOBAL_DRIVER.find_element(By.CSS_SELECTOR, '#endsName').send_keys(des_region_index)
@@ -169,7 +171,9 @@ class FuncCustomerCall:
                 lambda x: x.find_element_by_id('sel_destination').get_attribute('value') != '')
             we_des_addr.click()
             WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
-                EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#end-lists-penal>li:nth-child(1)')))
+            # WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
+            #     EC.visibility_of_all_elements_located((By.CSS_SELECTOR, '#end-lists-penal>li')))
         we_des_addr.send_keys(des_addr)
         WebDriverWait(globalvar.GLOBAL_DRIVER, 20).until(EC.visibility_of_element_located((By.CSS_SELECTOR,
             '#end-lists-penal>li:nth-child(1)')), '终点POI无法获取').click()

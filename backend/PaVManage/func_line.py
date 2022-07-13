@@ -287,7 +287,7 @@ class FuncLine:
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#btnSave').click()
         try:
             globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]>div>a.layui-layer-btn0'))).click()
         except:
             pass
         sleep(2)  # 测试与灰度正式的移除车型流程有差异，测试少了移除车型清除价格的弹窗
@@ -457,10 +457,10 @@ class FuncLine:
             EC.invisibility_of_element_located((By.CSS_SELECTOR, 'div[type="dialog"]')))
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
 
-    def set_safe_phone(self, supplier = '和多号平台', province='福建省', city='厦门市', flag=True):
+    def set_safe_phone(self, supplier='和多号平台', province='福建省', city='厦门市', flag=True):
         """
-        设置安全号码。用法：setSafePhone(driver, province='福建省', city='厦门市', flag=True)
-        :param driver:
+        设置安全号码。用法：set_safe_phone(supplier, province='福建省', city='厦门市', flag=True)
+        :param supplier: 安全号供应商
         :param province: 字符串，省份名称
         :param city: 字符串，市名称
         :param flag: True为设置安全号码，False为取消设置
@@ -511,8 +511,9 @@ class FuncLine:
                 log.logger.error(f'保存安全号码设置失败，msg={msg_text}')
                 raise IndexError
             return msg_text
-#        except:
-#            globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
+        except:
+            globalvar.GLOBAL_DRIVER.execute_script("$('#btnSecCancel').click()")
+            log.logger.info(traceback.format_exc())
 
         finally:
             globalvar.GLOBAL_DRIVER.switch_to.default_content()

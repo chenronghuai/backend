@@ -18,20 +18,26 @@ class FuncDriverReport:
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '司机报班', 'driverReport.do')
 
     def report_action(self, ori_val, des_val):
-        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(lambda x: x.find_element_by_id('driverUid').get_attribute('value') != '')
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(lambda x: x.find_element_by_id('driverUid').get_attribute('value') != '')
         globalvar.GLOBAL_DRIVER.execute_script('$("#sel_origin").val("' + ori_val + '")')
         globalvar.GLOBAL_DRIVER.execute_script('$("#sel_destination").val("' + des_val + '")')
-        sleep(2)
+        we_location = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#location_name')
+        sleep(1)
+        we_location.clear()
+        we_location.send_keys('厦门市思明区前埔北路')  # 2022-03-15，防止后台取不到司机位置导致报班失败
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, '#tangram-suggestion--TANGRAM__1p-item0 > i'))).click()
+        sleep(1)
         globalvar.GLOBAL_DRIVER.execute_script('$("table#data_table>tbody>tr").html("")')
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#report').click()
         msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
 
         try:
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 2).until(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, 'table#data_table>tbody>tr')))
             return True
         except TimeoutException:
-            log.logger.debug(f'司机报班失败，msg={msg_text}')
+            log.logger.debug(f'司机报班失败---{msg_text}!')
             return False
 
     def driver_report_by_phone(self, phone, ori_val, des_val):
@@ -48,8 +54,8 @@ class FuncDriverReport:
             raise ValueError
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]')))
-        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(15)>a[name="btnReport"]').click()
+            (By.CSS_SELECTOR, 'tbody>tr>td:nth-child(15)>a[name="btnReport"]'))).click()
+#        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('tbody>tr>td:nth-child(15)>a[name="btnReport"]').click()
         if not self.report_action(ori_val, des_val):
             return '报班失败'
 
@@ -71,14 +77,14 @@ class FuncDriverReport:
     def driver_report_by_carnum(self, carnum, phone, ori_val, des_val):
         self.is_phone = False
         self.b_driver = False
-        e_carnum = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCar_text')
-        e_carnum.clear()
+        we_carnum = globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#selCar_text')
+        we_carnum.clear()
         globalvar.GLOBAL_DRIVER.execute_script('$("table#data_table>tbody>tr").html("")')  # 清空表内容，避免用例交叉
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         globalvar.GLOBAL_DRIVER.execute_script('$("#phone").val("")')
 #        globalvar.GLOBAL_DRIVER.execute_script('$("#selCar_text").val("' + carnum + '")')
-        e_carnum.click()
-        e_carnum.send_keys(carnum)
+        we_carnum.click()
+        we_carnum.send_keys(carnum)
         WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.layui-layer-shade')))
         WebDriverWait(globalvar.GLOBAL_DRIVER, 15).until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, 'ul.sp_results>li[pkey="' + carnum + '"]'))).click()

@@ -83,25 +83,25 @@ class FuncInterCenter:
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#todoExitBtn').click()
 
         try:
-            msg_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+            # 2022-7-5改用wait_for_laymsg，待观察
+            msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
             setattr(self, 'appoint_result_text', msg_text)
         except:
             pass
 
         globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
         sleep(1)  # 切换到父iframe需强制sleep，否则接下来的上层iframe定位将会失败，不知原因
+        # 2022-7-6以下try块为处理跨车型指派提示框的处理
         try:
             WebDriverWait(globalvar.GLOBAL_DRIVER, 1).until(
                 EC.visibility_of_element_located(
                     (By.CSS_SELECTOR, 'div.layui-layer-btn.layui-layer-btn->a.layui-layer-btn0'))).click()
-            msg_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+            # msg_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            #     EC.presence_of_element_located((By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+            msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
             setattr(self, 'appoint_result_text', msg_text)
         except:
             pass
-
-
 
     def select_driver(self, driver_id):
         try:
@@ -116,7 +116,7 @@ class FuncInterCenter:
 
     def add_inter_order(self, order_id):
         try:
-            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_element_located(
+            WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(EC.presence_of_all_elements_located(
                 (By.CSS_SELECTOR, 'div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')))
             try:
                 orders = globalvar.GLOBAL_DRIVER.find_elements_by_css_selector('div#orderDispatchAddLeft>ul#dispatch-list-add-all-rows>li')
@@ -131,14 +131,17 @@ class FuncInterCenter:
                     sleep(1)
                     globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#orderAddBtn').click()
                     try:
-                        msg_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
-                            EC.presence_of_element_located(
-                                (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                        # 2022-7-5改用wait_fro_laymsg，待观察
+                        # msg_text = WebDriverWait(globalvar.GLOBAL_DRIVER, 3).until(
+                        #     EC.presence_of_element_located(
+                        #         (By.CSS_SELECTOR, '.layui-layer-content.layui-layer-padding'))).text
+                        msg_text = utils.wait_for_laymsg(globalvar.GLOBAL_DRIVER)
                         setattr(self, 'add_result_text', msg_text)
                     except:
                         pass
                     globalvar.GLOBAL_DRIVER.switch_to.parent_frame()
                     sleep(1)
+                    # 2022-7-6以下try块为处理跨车型指派提示框的处理
                     try:
                         WebDriverWait(globalvar.GLOBAL_DRIVER, 1).until(
                             EC.visibility_of_element_located(
@@ -152,6 +155,7 @@ class FuncInterCenter:
                             pass
                     except:
                         pass
+
                     globalvar.GLOBAL_DRIVER.switch_to.frame(
                         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('iframe[src^="/orderCtrl.do?method=getDriverAddOrdersPage"]'))
                     globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#closeBtn').click()

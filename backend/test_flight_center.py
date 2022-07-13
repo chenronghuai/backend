@@ -118,7 +118,7 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
             assert isinstance(driver_css, str)
         except:
             log.logger.error(f'the type of dviver_css is {type(driver_css)}')
-        pre_add_count = int(WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
+#        pre_add_count = int(WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, driver_css + '>td:nth-child(9)'))).text)
         if order_type in [OrderType.FASTLINE]:
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector(
                 driver_css + '>td:nth-child(11)>a[name="btnRepairOrderKb"]').click()
@@ -167,8 +167,9 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
         if argv[1] == 'TEST':
             sleep(20)
         else:
-            sleep(40)
+            sleep(50)
         globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#orderList').click()
+        globalvar.GLOBAL_DRIVER.find_element_by_css_selector('#ipt_line_query').click()  # 刷新一下列表
         WebDriverWait(globalvar.GLOBAL_DRIVER, 10, ignored_exceptions=(StaleElementReferenceException,)).until(EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr')))
         fast_line_orders = list(filter(lambda order: order.order_type == OrderType.FASTLINE, globalvar.order_pool))
@@ -180,5 +181,6 @@ class TestFlightCenter(unittest.TestCase, metaclass=TestMeta):
                 expect_iter.append(True)
             else:
                 expect_iter.append(False)
+                log.logger.info(f'id={id_}没有自动指派成功！')
                 break
         self.assertTrue(all(expect_iter))

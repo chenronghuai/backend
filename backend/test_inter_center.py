@@ -17,10 +17,11 @@ from PaVManage.func_line import FuncLine
 
 if argv[1] == 'TEST':
     expect_text_dict = {
-                '专车排班': ['补单', '核单', '置顶', '取消', '呼出', '发车', '锁定', '空车'],
-                '已发车': ['呼出', '补单', '详情', '补空单'],
+                '专车排班': ['补单', '核单', '置顶', '取消', '发车', '锁定', '空车'],
+                '已发车': ['补单', '详情', '补空单'],
                 '即时1': ['呼出', '消单', '指派', '分享', '收回'],
                 '即时2': ['呼出', '消单', '指派', '分享'],
+                '即时3': ['呼出', '指派', '分享'],
                 '已派': ['呼出', '改派', '消单', '改单', '重派司机']
             }
 else:  # 正式环境账号部分没有“呼出”功能
@@ -29,6 +30,7 @@ else:  # 正式环境账号部分没有“呼出”功能
         '已发车': ['补单', '详情', '补空单'],
         '即时1': ['呼出', '消单', '指派', '分享', '收回'],
         '即时2': ['呼出', '消单', '指派', '分享'],
+        '即时3': ['呼出', '指派', '分享'],
         '已派': ['呼出', '改派', '消单', '改单', '重派司机']
     }
 
@@ -45,6 +47,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
 
         utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '城际调度中心', 'orderCenterNew.do')
         cls.__name__ = cls.__name__ + "（城际调度中心：指派拼车、包车、货件，补单拼车、货件、快线，改派、发车功能，包车车型过滤，操作栏菜单，运营中心订单可视权限）"
+
 
     @unittest.skipIf(argv[1] != 'TEST', '非测试环境不跑')
     @data('泉州运营中心', '厦门运营中心')
@@ -139,7 +142,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
             log.logger.debug(f'指派{order_type}失败，msg=没有匹配的司机')
             assert False
         self.ic.appoint_order(order.order_id, driver.driver_id)
-        if '指派操作成功!' in getattr(self.ic, 'appoint_result_text', ''):
+        if '指派操作成功!' in getattr(self.ic, 'appoint_result_text'):
             globalvar.GLOBAL_DRIVER.find_element_by_css_selector('div.nav-right.td-opera > a[title="已派"]').click()
             appointed_orders = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, '#orderImmediately>table>tbody#tdy_driver_queue>tr')))
@@ -159,7 +162,7 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
                 order.order_status = OrderStatus.WAITING
                 order.appoint_driver = None
         else:
-            log.logger.debug(f'城际调度中心指派{order_type}失败，msg={getattr(self.ic, "appoint_result_text", "")}')
+            log.logger.debug(f'城际调度中心指派{order_type}失败，msg={getattr(self.ic, "appoint_result_text", "未知原因")}')
             assert False
 
     @data(OrderType.CARPOOLING, OrderType.EXPRESS, OrderType.FASTLINE)
@@ -324,17 +327,37 @@ class TestInterCenter(unittest.TestCase, metaclass=TestMeta):
             if category == '即时':
                 if utils.read_config_value(argv[2], 'oc') == info_dict['oc']:
                     self.assertEqual(sorted(result_operate_text), sorted(expect_text_dict['即时1']))
-                else:
+                elif utils.read_config_value(argv[2], 'oc') != info_dict['oc'] and info_dict['oc'] == '00001':  # "帮邦行运营中心222"的订单有“消单”
                     self.assertEqual(sorted(result_operate_text), sorted(expect_text_dict['即时2']))
+                else:
+                    self.assertEqual(sorted(result_operate_text), sorted(expect_text_dict['即时3']))
             else:
                 self.assertEqual(sorted(result_operate_text), sorted(expect_text_dict[category]))
         else:
             if argv[1] == 'TEST':
-                self.assertEqual(sorted(result_operate_text), sorted(['呼出', '补单', '详情']))
-            else:
+                # self.assertEqual(sorted(result_operate_text), sorted(['呼出', '补单', '详情']))
                 self.assertEqual(sorted(result_operate_text), sorted(['补单', '详情']))
+            else:
+                self.assertEqual(sorted(result_operate_text), sorted(['补单', '详情', '预约放空']))
             # 已发车需要细化各种派单情形：人满、货满，待后续优化
 
         sleep(2)  # 发现当前用例会取到前一个用例的菜单文本，加等待试试
 
-
+    def test_subscribe_present(self):
+        """
+        测试预约单在调度中心的可见性
+        :return:
+        """
+        id_list = utils.get_subscribe_order()  # 过滤出网约单中的预约单（>40分钟）
+        utils.make_sure_driver(globalvar.GLOBAL_DRIVER, '监控管理', '城际调度中心', 'orderCenterNew.do')
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, '#orderList'))).click()
+        WebDriverWait(globalvar.GLOBAL_DRIVER, 5).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav-right.td-opera > a[title="预约"]'))).click()
+        sleep(1)
+        we_subscribe_orders = WebDriverWait(globalvar.GLOBAL_DRIVER, 10).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, 'div#orderImmediately>table>tbody#tdy_driver_queue>tr')))
+        all_subscribe_ids = [x.get_attribute('order-id') for x in we_subscribe_orders]
+        result = []
+        for id in id_list:
+            result.append(all_subscribe_ids.count(id))
+        assert all(result)

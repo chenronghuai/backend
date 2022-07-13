@@ -23,8 +23,8 @@ class TestOrderManage(unittest.TestCase, metaclass=TestMeta):
         cls.om = FuncOrderManage()
         cls.__name__ = cls.__name__ + "（网约订单管理：订单上车、下车、现金等操作）"
 
-    test_order = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-    prod_order = (1, 2, 3, 4, 5, 6, 7)
+    test_order = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+    prod_order = (1, 2, 3, 4, 5, 6, 7, 8)
 
     @data(*test_order if argv[1] == 'TEST' else prod_order)
     def test_complete_order(self, index):

@@ -29,14 +29,15 @@ def login(url_section, user_section, main_flag=True):
     """
     driver = None
     options = Options()
-    options.add_argument('--headless')  # 无头模式
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
+    if sys.platform.startswith('lin'):
+        options.add_argument('--headless')  # 无头模式
+        options.add_argument('--disable-gpu')
+        options.add_argument('--no-sandbox')
+    else:  # 关闭浏览器受到自动化测试软件控制的提示
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
     try:
-        if sys.platform.startswith('lin'):
-            driver = webdriver.Chrome(options=options)
-        else:
-            driver = webdriver.Chrome()
+        driver = webdriver.Chrome(options=options)
         globalvar.set_value('driver', driver)
         globalvar.GLOBAL_DRIVER = driver
         driver.get(utils.read_config_value(url_section, 'scheme') + utils.read_config_value(url_section, 'baseurl'))
